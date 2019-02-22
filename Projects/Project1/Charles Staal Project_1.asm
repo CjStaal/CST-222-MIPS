@@ -276,32 +276,32 @@ arg1saved: .word 0
 		back:
 		loop1:
 			beq $t0, 32, done #while k < 32
-			sll $s0, $s0, 1 
-			sll $s1, $s1, 1
-			sgt $t5, $t5, 0 #sets t5 to 1 if greater than zero, else zero
-			beq $t5, 1, add_one
+			sll $s0, $s0, 1 # v = v << 1
+			sll $s1, $s1, 1 # r = r << 1
+			beq $t5, 1, add_one #if MSB==1, r = r+1
 			return:
-			blt $t0, 34, check1
+			blt $t0, 31, check1 # if k < 31 [second check in check1]
 			return2:
 			addu $t0, $t0, 1 #k++
 			b loop1
 		loop2:	
 		
-			li $t2, 0xf0000000
-			li $t3, 0x40000000
-			li $t4, 0x30000000
-			beq $t1, 8, return2
-			bge $t7, $t3, jump
-			addu $s1, $s1, $t4 #ARITHMETIC OVERFLOW -- WHY!?!?!?!?!?
+			beq $t1, 8, return2 # if i = 8, return to loop 1
+			ble $t7, $t3, jump # if mv <= cmp, jump over, else, r = r + add
+			addu $s1, $s1, $t4 
 			jump:
 			srl $t2, $t2, 4
 			srl $t3, $t3, 4
-			addu $t1, $t1, 1
+			srl $t4, $t4, 4
+			addu $t1, $t1, 1 # increment i for loop2
 			b loop2
 		check1:
-			li $t1, 0
-			bnez $s1, loop2
-			b loop1
+			li $t1, 0 #initialize i to 0 for loop2
+			li $t2, 0xf0000000
+			li $t3, 0x40000000
+			li $t4, 0x30000000
+			bnez $s1, loop2 #jumps to loop2 if r is not yet zero
+			b loop1 #else jump to loop1
 		add_one:
 			addi $s1, $s1, 1
 			b return
