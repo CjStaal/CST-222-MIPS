@@ -250,11 +250,10 @@ arg1saved: .word 0
 .end_macro
 
 .macro to_double_dabble(%int)
-	.data
-		result: .word 0#we need 20 bits, a word is 32, will be good.
+
 	.text
 		lw $s0, %int
-		lw $s1, result
+		li $s1, 0
 		# $s0 - v
 		# $s1 - r
 		# $t0 - k
@@ -273,6 +272,7 @@ arg1saved: .word 0
 		get_sign($s0, $t5)
 		li $t6, 1
 		li $t7, 0
+		abs $s0, $s0
 		back:
 		loop1:
 			beq $t0, 32, done #while k < 32
@@ -283,18 +283,19 @@ arg1saved: .word 0
 			return:
 			blt $t0, 34, check1
 			return2:
-			addi $t0, $t0, 1 #k++
+			addu $t0, $t0, 1 #k++
 			b loop1
 		loop2:
 			beq $t1, 8, return2
 			bge $t7, $t3, jump
-			add $s1, $s1, $t4 #ARITHMETIC OVERFLOW -- WHY!?!?!?!?!?
+			addu $s1, $s1, $t4 #ARITHMETIC OVERFLOW -- WHY!?!?!?!?!?
 			jump:
 			srl $t2, $t2, 4
 			srl $t3, $t3, 4
-			addi $t1, $t1, 1
+			addu $t1, $t1, 1
 			b loop2
 		check1:
+			li $t1, 0
 			bnez $s1, loop2
 			b loop1
 		add_one:
@@ -303,12 +304,10 @@ arg1saved: .word 0
 		negative:
 			print_ready_string("-")
 			b back
-		overflow:
-			print_ready_string("65536 can not be computed as it overflows the integer")
-			print_ready_string("\n but it would be\n - 0110 0101 0101 0011 0110\n")
-			b exit
 		done:
-			print_bin($s0)
+		move $a0, $s1
+		li $v0, 34
+		syscall
 		exit:
 .end_macro
 
