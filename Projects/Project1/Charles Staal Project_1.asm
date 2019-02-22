@@ -212,6 +212,7 @@ arg1saved: .word 0
 		beq $t2, '1', ones_complement
 		beq $t2, 's', signed_magnitude
 		beq $t2, 'g', gray_code #Binary coded decimal
+		beq $t2, 'd', double_dabble
 		
 		print_ready_string("\n")
 		ones_complement:
@@ -223,6 +224,9 @@ arg1saved: .word 0
 		gray_code:
 			to_gray_code(%int)
 			b exit
+		double_dabble:
+			to_double_dabble(%int)
+			b exit
 		exit:
 .end_macro
 
@@ -233,6 +237,7 @@ arg1saved: .word 0
 		beq $t2, '1', continue
 		beq $t2, 's', continue
 		beq $t2, 'g', continue
+		beq $t2, 'd', continue
 		print_string(error)
 		exit()
 		continue:
@@ -242,6 +247,86 @@ arg1saved: .word 0
 	.text
 		li $v0, 10
 		syscall
+.end_macro
+
+.macro to_double_dabble(%int)
+	.data
+		result: .word 0#we need 20 bits, a word is 32, will be good.
+	.text
+		lw $s0, %int
+		lw $s1, result
+		# $s0 - v
+		# $s1 - r
+		# $t0 - k
+		# $t1 - i
+		# $t2 - mask
+		# $t3 - cmp
+		# $t4 - add
+		# $t5 - msb
+		# $t6 - 1
+		li $t0, $0
+		li $t1, $0
+		li $t2, 0xf0000000
+		li $t3, 0x40000000
+		li $t4, 0x30000000
+		get_sign($s0, $t5)
+		li $t6, 1
+		
+		outerloop:
+			beq $t0, 32, done
+			sll $s0, $s0, 1
+			sll $s1, $s1, 1
+			
+		negative:
+			print_ready_string("-")
+			b back
+		overflow:
+			print_ready_string("65536 can not be computed as it overflows the integer")
+			print_ready_string("\n but it would be\n - 0110 0101 0101 0011 0110\n")
+			b exit
+		done:
+			print_bin($s0)
+		exit:
+.end_macro
+
+.macro get_length($int, $reg)
+	.text
+		beqz $int, zero
+		abs $t7, $int
+		blt $t7, 10, less_than_10
+		blt $t7, 100, less_than_100
+		blt $t7, 1000, less_than_1000
+		blt $t7, 10000, less_than_10000
+		ble $t7, 65535, less_than_or_equal_65535
+		
+		less_than_10:
+			li $reg, 4
+			b exit
+		less_than_100:
+			li $reg, 8
+			b exit
+		less_than_1000:
+			li $reg, 12
+			b exit
+		less_than_10000:
+			li $reg, 16
+			b exit
+		less_than_or_equal_65535:
+			li $reg, 20
+			b exit
+		zero:
+			li $reg, 0
+			b exit
+		exit:
+.end_macro
+
+.macro get_sign($int, $reg)
+	.text
+		bltz $int, negative
+		li $reg, 0
+		negative:
+			li $reg, 1
+		exit:
 .end_macro
 
 .globl main
