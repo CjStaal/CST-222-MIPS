@@ -264,19 +264,42 @@ arg1saved: .word 0
 		# $t4 - add
 		# $t5 - msb
 		# $t6 - 1
-		li $t0, $0
-		li $t1, $0
+		# $t7 - mv
+		li $t0, 0
+		li $t1, 0
 		li $t2, 0xf0000000
 		li $t3, 0x40000000
 		li $t4, 0x30000000
 		get_sign($s0, $t5)
 		li $t6, 1
-		
-		outerloop:
-			beq $t0, 32, done
-			sll $s0, $s0, 1
+		li $t7, 0
+		back:
+		loop1:
+			beq $t0, 32, done #while k < 32
+			sll $s0, $s0, 1 
 			sll $s1, $s1, 1
-			
+			sgt $t5, $t5, 0 #sets t5 to 1 if greater than zero, else zero
+			beq $t5, 1, add_one
+			return:
+			blt $t0, 34, check1
+			return2:
+			addi $t0, $t0, 1 #k++
+			b loop1
+		loop2:
+			beq $t1, 8, return2
+			bge $t7, $t3, jump
+			add $s1, $s1, $t4 #ARITHMETIC OVERFLOW -- WHY!?!?!?!?!?
+			jump:
+			srl $t2, $t2, 4
+			srl $t3, $t3, 4
+			addi $t1, $t1, 1
+			b loop2
+		check1:
+			bnez $s1, loop2
+			b loop1
+		add_one:
+			addi $s1, $s1, 1
+			b return
 		negative:
 			print_ready_string("-")
 			b back
@@ -318,6 +341,13 @@ arg1saved: .word 0
 			li $reg, 0
 			b exit
 		exit:
+.end_macro
+
+.macro print_bin($reg)
+	.text
+		move $a0, $reg
+		li $v0, 35
+		syscall
 .end_macro
 
 .macro get_sign($int, $reg)
