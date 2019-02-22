@@ -55,9 +55,9 @@ for (var k = 0; k < 32; ++k)
  			if (mv > cmp){
  				r = r + add
 			}
+ 			mask = mask >>> 4
+ 			cmp = cmp >>> 4
+ 			add = add >>> 4
 		}
- 		mask = mask >>> 4
- 		cmp = cmp >>> 4
- 		add = add >>> 4
 	}
 }

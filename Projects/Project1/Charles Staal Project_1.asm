@@ -285,7 +285,11 @@ arg1saved: .word 0
 			return2:
 			addu $t0, $t0, 1 #k++
 			b loop1
-		loop2:
+		loop2:	
+		
+			li $t2, 0xf0000000
+			li $t3, 0x40000000
+			li $t4, 0x30000000
 			beq $t1, 8, return2
 			bge $t7, $t3, jump
 			addu $s1, $s1, $t4 #ARITHMETIC OVERFLOW -- WHY!?!?!?!?!?
