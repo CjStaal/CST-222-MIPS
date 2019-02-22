@@ -311,37 +311,6 @@ arg1saved: .word 0
 		exit:
 .end_macro
 
-.macro get_length($int, $reg)
-	.text
-		beqz $int, zero
-		abs $t7, $int
-		blt $t7, 10, less_than_10
-		blt $t7, 100, less_than_100
-		blt $t7, 1000, less_than_1000
-		blt $t7, 10000, less_than_10000
-		ble $t7, 65535, less_than_or_equal_65535
-		
-		less_than_10:
-			li $reg, 4
-			b exit
-		less_than_100:
-			li $reg, 8
-			b exit
-		less_than_1000:
-			li $reg, 12
-			b exit
-		less_than_10000:
-			li $reg, 16
-			b exit
-		less_than_or_equal_65535:
-			li $reg, 20
-			b exit
-		zero:
-			li $reg, 0
-			b exit
-		exit:
-.end_macro
-
 .macro print_bin($reg)
 	.text
 		move $a0, $reg
