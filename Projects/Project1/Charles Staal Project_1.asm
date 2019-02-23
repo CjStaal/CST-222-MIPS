@@ -273,10 +273,6 @@ arg1saved: .word 0
 		abs $s0, $s0 #Double dabble only works with positive numbers. So we use the abs value and just use the msb gathered earlier to print out a - or not
 		back:
 		loop1:
-		
-			li $t2, 0xf0000000
-			li $t3, 0x40000000
-			li $t4, 0x30000000
 			beq $t0, 32, done #while k < 32
 			li $t5, 0
 			blt $s0, 0, v_less_than_zero
@@ -297,17 +293,21 @@ arg1saved: .word 0
 			srl $t2, $t2, 4 # mask = mask >>> 4
 			srl $t3, $t3, 4 # cmp = cmp >>> 4
 			srl $t4, $t4, 4 # add = add >>> 4
-			addi $t1, $t1, 1 # increment i for loop2\
+			addi $t1, $t1, 1 # increment i for loop2
 			b loop2
 		check1:
 			li $t1, 0 #initialize i to 0 for loop2
-			beqz $s1 return2
+			
+			li $t2, 0xf0000000 # mask
+			li $t3, 0x40000000 # cmp
+			li $t4, 0x30000000 # add
+			beqz $s1 return2 #if r = 0, return
 			b loop2 #else jump to loop2
 		v_less_than_zero:
 			li $t5, 1 #msb = true
 			b returnV_LTZ
 		msb_toggled:
-			addi $s1, $s1, 1
+			addi $s1, $s1, 1 # r = r + 1
 			b return
 		mvcmp:
 			add $s1, $s1, $t4  # if mv > cmp, r = r + add
