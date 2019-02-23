@@ -20,10 +20,10 @@ arg1saved: .word 0
 .macro load_args()
 	.text
 		lw $t0, 0($a1)
+		lw $t1, 4($a1)
 		sw $t0, arg1
 		sw $t0, arg1saved
-		lw $t0, 4($a1)
-		sw $t0, arg2
+		sw $t1, arg2
 .end_macro
 
 .macro print_string(%str)
@@ -267,9 +267,6 @@ arg1saved: .word 0
 		# $s2 - sign bit
 		li $t0, 0 #k
 		li $t1, 0 #i
-		#li $t2, 0xf0000000 #mask
-		#li $t3, 0x40000000 #cmp
-		#li $t4, 0x30000000 #add
 		get_sign($s0, $s2) #sign bit
 		li $t6, 1 #just 1
 		li $t7, 0 #mv
@@ -308,22 +305,23 @@ arg1saved: .word 0
 			b loop2 #else jump to loop2
 		v_less_than_zero:
 			li $t5, 1 #msb = true
-			print_ready_string("I should only be here if negative\n")
 			b returnV_LTZ
 		msb_toggled:
 			addi $s1, $s1, 1
-			print_ready_string("I should only be here if negative too\n")
 			b return
 		mvcmp:
 			add $s1, $s1, $t4  # if mv > cmp, r = r + add
 			b return3
 		negative:
 			print_ready_string("-")
-			b back
+			b done2
 		done:
-		move $a0, $s1
-		li $v0, 34
-		syscall
+			print_string(dbl)
+			beq $s2, 1, negative
+			done2:
+			move $a0, $s1
+			li $v0, 34
+			syscall
 		exit:
 .end_macro
 
