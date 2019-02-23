@@ -264,52 +264,56 @@ arg1saved: .word 0
 		# $t5 - msb
 		# $t6 - 1
 		# $t7 - mv
-		li $t0, 0
-		li $t1, 0
-		li $t2, 0xf0000000
-		li $t3, 0x40000000
-		li $t4, 0x30000000
-		get_sign($s0, $t5)
-		li $t6, 1
-		li $t7, 0
-		abs $s0, $s0
+		# $s2 - sign bit
+		li $t0, 0 #k
+		li $t1, 0 #i
+		#li $t2, 0xf0000000 #mask
+		#li $t3, 0x40000000 #cmp
+		#li $t4, 0x30000000 #add
+		get_sign($s0, $s2) #sign bit
+		li $t6, 1 #just 1
+		li $t7, 0 #mv
+		abs $s0, $s0 #Double dabble only works with positive numbers. So we use the abs value and just use the msb gathered earlier to print out a - or not
 		back:
 		loop1:
+		
+			li $t2, 0xf0000000
+			li $t3, 0x40000000
+			li $t4, 0x30000000
 			beq $t0, 32, done #while k < 32
+			li $t5, 0
+			blt $s0, 0, v_less_than_zero
+			returnV_LTZ:
 			sll $s0, $s0, 1 # v = v << 1
 			sll $s1, $s1, 1 # r = r << 1
-			beq $t5, 1, add_one #if MSB==1, r = r+1
+			beq $t5, 1, msb_toggled #if MSB==1, r = r+1
 			return:
 			blt $t0, 31, check1 # if k < 31 [second check in check1]
 			return2:
 			addi $t0, $t0, 1 #k++
 			b loop1
-		loop2:	
+		loop2:
 			beq $t1, 8, return2 # if i = 8, return to loop 1
-			and $t7, $t7, $s1# var mv = mask & r
-			bgt $t7, $t3 mvcmp
+			and $t7, $t2, $s1# var mv = mask & r
+			bgt $t7, $t3 mvcmp # if mv > cmp
 			return3:
-			srl $t2, $t2, 4
-			srl $t3, $t3, 4
-			srl $t4, $t4, 4
-			addi $t1, $t1, 1 # increment i for loop2
-			move $a0, $s1
-			li $v0, 34
-			syscall
-			print_ready_string("\n")
+			srl $t2, $t2, 4 # mask = mask >>> 4
+			srl $t3, $t3, 4 # cmp = cmp >>> 4
+			srl $t4, $t4, 4 # add = add >>> 4
+			addi $t1, $t1, 1 # increment i for loop2\
 			b loop2
 		check1:
 			li $t1, 0 #initialize i to 0 for loop2
-			#li $t2, 0xf0000000
-			#li $t3, 0x40000000
-			#li $t4, 0x30000000
-			bnez $s1, loop2 #jumps to loop2 if r is not yet zero
-			b loop1 #else jump to loop1
-		add_one:
+			beqz $s1 return2
+			b loop2 #else jump to loop2
+		v_less_than_zero:
+			li $t5, 1 #msb = true
+			b returnV_LTZ
+		msb_toggled:
 			addi $s1, $s1, 1
 			b return
 		mvcmp:
-			and $s7, $t2, $s1
+			add $s1, $s1, $t4  # if mv > cmp, r = r + add
 			b return3
 		negative:
 			print_ready_string("-")
@@ -330,10 +334,9 @@ arg1saved: .word 0
 
 .macro get_sign($int, $reg)
 	.text
-		bltz $int, negative
 		li $reg, 0
-		negative:
-			li $reg, 1
+		bgez $int, exit
+		or $reg, $reg, 1
 		exit:
 .end_macro
 
