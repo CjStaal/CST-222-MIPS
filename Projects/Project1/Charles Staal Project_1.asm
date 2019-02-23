@@ -308,9 +308,11 @@ arg1saved: .word 0
 			b loop2 #else jump to loop2
 		v_less_than_zero:
 			li $t5, 1 #msb = true
+			print_ready_string("I should only be here if negative\n")
 			b returnV_LTZ
 		msb_toggled:
 			addi $s1, $s1, 1
+			print_ready_string("I should only be here if negative too\n")
 			b return
 		mvcmp:
 			add $s1, $s1, $t4  # if mv > cmp, r = r + add
