@@ -253,7 +253,7 @@ arg1saved: .word 0
 
 	.text
 		lw $s0, %int
-		li $s1, 0
+		move $s1, $0
 		# $s0 - v
 		# $s1 - r
 		# $t0 - k
@@ -282,18 +282,17 @@ arg1saved: .word 0
 			return:
 			blt $t0, 31, check1 # if k < 31 [second check in check1]
 			return2:
-			addu $t0, $t0, 1 #k++
+			addi $t0, $t0, 1 #k++
 			b loop1
 		loop2:	
-		
 			beq $t1, 8, return2 # if i = 8, return to loop 1
-			ble $t7, $t3, jump # if mv <= cmp, jump over, else, r = r + add
-			addu $s1, $s1, $t4 
-			jump:
+			and $t7, $t7, $s1# var mv = mask & r
+			bgt $t7, $t3 mvcmp
+			return3:
 			srl $t2, $t2, 4
 			srl $t3, $t3, 4
 			srl $t4, $t4, 4
-			addu $t1, $t1, 1 # increment i for loop2
+			addi $t1, $t1, 1 # increment i for loop2
 			b loop2
 		check1:
 			li $t1, 0 #initialize i to 0 for loop2
@@ -305,6 +304,9 @@ arg1saved: .word 0
 		add_one:
 			addi $s1, $s1, 1
 			b return
+		mvcmp:
+			and $s7, $t2, $s1
+			b return3
 		negative:
 			print_ready_string("-")
 			b back
