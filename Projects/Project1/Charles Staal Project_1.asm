@@ -293,12 +293,16 @@ arg1saved: .word 0
 			srl $t3, $t3, 4
 			srl $t4, $t4, 4
 			addi $t1, $t1, 1 # increment i for loop2
+			move $a0, $s1
+			li $v0, 34
+			syscall
+			print_ready_string("\n")
 			b loop2
 		check1:
 			li $t1, 0 #initialize i to 0 for loop2
-			li $t2, 0xf0000000
-			li $t3, 0x40000000
-			li $t4, 0x30000000
+			#li $t2, 0xf0000000
+			#li $t3, 0x40000000
+			#li $t4, 0x30000000
 			bnez $s1, loop2 #jumps to loop2 if r is not yet zero
 			b loop1 #else jump to loop1
 		add_one:
