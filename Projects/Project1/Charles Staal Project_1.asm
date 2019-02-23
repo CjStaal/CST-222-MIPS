@@ -271,6 +271,8 @@ arg1saved: .word 0
 		li $t6, 1 #just 1
 		li $t7, 0 #mv
 		abs $s0, $s0 #Double dabble only works with positive numbers. So we use the abs value and just use the msb gathered earlier to print out a - or not
+		
+		bgt $s0, 99999999, overflow #Double dabble will overflow if abs value is greater than this
 		back:
 		loop1:
 			beq $t0, 32, done #while k < 32
@@ -322,6 +324,9 @@ arg1saved: .word 0
 			move $a0, $s1
 			li $v0, 34
 			syscall
+			b exit
+		overflow:
+			print_ready_string("ERROR: Double dabble will overflow with given number.\n")
 		exit:
 .end_macro
 
