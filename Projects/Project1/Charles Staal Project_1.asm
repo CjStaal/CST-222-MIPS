@@ -20,7 +20,7 @@ arg1saved: .word 0
 .macro load_args()
 	.text
 		lw $t0, 0($a1)
-		lw $t1, 4($a1)
+		lw $t1, 4($a1) #LW and directly after SW for same register is a pipeline hazard in actual hardware. 
 		sw $t0, arg1
 		sw $t0, arg1saved
 		sw $t1, arg2
