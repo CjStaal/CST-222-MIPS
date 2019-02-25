@@ -1,6 +1,6 @@
-#Project One
-#name: Charles Staal
-#sccid: 01040168
+# Project One
+# name: Charles Staal
+# sccid: 01040168
 
 .data
 .align 2
@@ -20,7 +20,7 @@ arg1saved: .word 0
 .macro load_args()
 	.text
 		lw $t0, 0($a1)
-		lw $t1, 4($a1) #LW and directly after SW for same register is a pipeline hazard in actual hardware. 
+		lw $t1, 4($a1) # LW and directly after SW for same register is a pipeline hazard in actual hardware. 
 		sw $t0, arg1
 		sw $t0, arg1saved
 		sw $t1, arg2
@@ -134,7 +134,7 @@ arg1saved: .word 0
 
 .macro to_one_comp(%int)
 	.text
-		#Ones compliment is just twos complement minus one if negative
+		# Ones compliment is just twos complement minus one if negative
 		# $t0 - arg1
 		print_string(one)
 		lw $t0, arg1
@@ -153,7 +153,7 @@ arg1saved: .word 0
 
 .macro to_signed_mag(%int)
 	.text
-		#Signed Magnitude is just flipping the last bit if negative
+		# Signed Magnitude is just flipping the last bit if negative
 		# $t0 - arg1
 		print_string(sm)
 		lw $t0, arg1
@@ -176,7 +176,7 @@ arg1saved: .word 0
 	.data
 
 	.text
-		#Signed Magnitude is just flipping the last bit if negative
+		# Signed Magnitude is just flipping the last bit if negative
 		# $t0 - arg1
 		print_string(gray)
 		lw $t0, arg1
@@ -203,15 +203,15 @@ arg1saved: .word 0
 
 .macro run_arg(%int, %str)
 	.text
-		#t0  - int
-		#t1 - s
-		#t2 - byte of s for comparison
+		# t0  - int
+		# t1 - s
+		# t2 - byte of s for comparison
 		lw $t0, %int
 		lw $t1, %str
 		lb $t2, ($t1)
 		beq $t2, '1', ones_complement
 		beq $t2, 's', signed_magnitude
-		beq $t2, 'g', gray_code #Binary coded decimal
+		beq $t2, 'g', gray_code
 		beq $t2, 'd', double_dabble
 		
 		print_ready_string("\n")
@@ -265,48 +265,47 @@ arg1saved: .word 0
 		# $t6 - 1
 		# $t7 - mv
 		# $s2 - sign bit
-		li $t0, 0 #k
-		li $t1, 0 #i
-		get_sign($s0, $s2) #sign bit
-		li $t6, 1 #just 1
-		li $t7, 0 #mv
-		abs $s0, $s0 #Double dabble only works with positive numbers. So we use the abs value and just use the msb gathered earlier to print out a - or not
-		
-		bgt $s0, 99999999, overflow #Double dabble will overflow if abs value is greater than this
+		li $t0, 0 # k
+		li $t1, 0 # i
+		get_sign($s0, $s2) # sign bit
+		li $t6, 1 # just 1
+		li $t7, 0 # mv
+		abs $s0, $s0 # Double dabble only works with positive numbers. So we use the abs value and just use the msb gathered earlier to print out a - or not
+		bgt $s0, 99999999, overflow # This algo won't work with a number with an absolute value above 99999999
 		back:
 		loop1:
-			beq $t0, 32, done #while k < 32
-			li $t5, 0
-			blt $s0, 0, v_less_than_zero
+		
+			li $t2, 0xf0000000 # mask
+			li $t3, 0x40000000 # cmp
+			li $t4, 0x30000000 # add
+			beq $t0, 32, done # while k < 32
+			li $t5, 0 # msb = false
+			blt $s0, 0, v_less_than_zero # checks msb and toggles if necessary
 			returnV_LTZ:
 			sll $s0, $s0, 1 # v = v << 1
 			sll $s1, $s1, 1 # r = r << 1
-			beq $t5, 1, msb_toggled #if MSB==1, r = r+1
+			beq $t5, 1, msb_toggled # if MSB==1, r = r+1
 			return:
 			blt $t0, 31, check1 # if k < 31 [second check in check1]
 			return2:
-			addi $t0, $t0, 1 #k++
+			addi $t0, $t0, 1 # k++
 			b loop1
 		loop2:
 			beq $t1, 8, return2 # if i = 8, return to loop 1
-			and $t7, $t2, $s1# var mv = mask & r
+			and $t7, $t2, $s1 # var mv = mask & r
 			bgt $t7, $t3 mvcmp # if mv > cmp
 			return3:
 			srl $t2, $t2, 4 # mask = mask >>> 4
 			srl $t3, $t3, 4 # cmp = cmp >>> 4
 			srl $t4, $t4, 4 # add = add >>> 4
-			addi $t1, $t1, 1 # increment i for loop2
+			addi $t1, $t1, 1 # increment i for loop2\
 			b loop2
 		check1:
-			li $t1, 0 #initialize i to 0 for loop2
-			
-			li $t2, 0xf0000000 # mask
-			li $t3, 0x40000000 # cmp
-			li $t4, 0x30000000 # add
-			beqz $s1 return2 #if r = 0, return
-			b loop2 #else jump to loop2
+			li $t1, 0 # initialize i to 0 for loop2
+			beqz $s1 return2
+			b loop2 # else jump to loop2
 		v_less_than_zero:
-			li $t5, 1 #msb = true
+			li $t5, 1 # msb = true
 			b returnV_LTZ
 		msb_toggled:
 			addi $s1, $s1, 1 # r = r + 1
@@ -317,16 +316,16 @@ arg1saved: .word 0
 		negative:
 			print_ready_string("-")
 			b done2
+		overflow:
+			print_ready_string("Overflow, this would require more than 32 bits.\n")
+			b exit
 		done:
 			print_string(dbl)
-			beq $s2, 1, negative
+			beq $s2, 1, negative # prints out negative sign if needed
 			done2:
 			move $a0, $s1
 			li $v0, 34
 			syscall
-			b exit
-		overflow:
-			print_ready_string("ERROR: Double dabble will overflow with given number.\n")
 		exit:
 .end_macro
 
@@ -362,6 +361,5 @@ main:
 	print_ready_string("\n")
 	run_arg(arg1, arg2)
 	exit()
-	
 	
 	
