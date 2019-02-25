@@ -1,8 +1,8 @@
 
-name: Cj
-enter value of t : 1
-enter value of y : 2
-enter value of z : 3
-for: a = z - y + t; a = 0
-for: b = t - 4(8 + z) + y; b = -41
+name: Charles Staal
+enter value of t : 100
+enter value of y : 8
+enter value of z : 10
+for: a = z - y + t; a = -98
+for: b = t - 4(8 + z) + y; b = 36
 -- program is finished running --
