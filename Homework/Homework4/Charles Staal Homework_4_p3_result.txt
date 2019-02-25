@@ -1,0 +1,8 @@
+
+name: Cj
+enter value of t : 1
+enter value of y : 2
+enter value of z : 3
+for: a = z - y + t; a = 0
+for: b = t - 4(8 + z) + y; b = -41
+-- program is finished running --
