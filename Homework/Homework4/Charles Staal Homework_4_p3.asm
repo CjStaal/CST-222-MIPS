@@ -39,10 +39,10 @@
 	lw $t1, yInt($zero)
 	lw $t2, tInt($zero)
 	
+	sub $t1, $t0, $t1
 	add $t1, $t1, $t2
-	sub $t0, $t0, $t1
 	
-	sw $t0, aInt($zero)
+	sw $t1, aInt($zero)
 .end_macro
 
 .macro Eq2()

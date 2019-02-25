@@ -1,8 +1,7 @@
-
 name: Charles Staal
 enter value of t : 100
 enter value of y : 8
 enter value of z : 10
-for: a = z - y + t; a = -98
+for: a = z - y + t; a = 102
 for: b = t - 4(8 + z) + y; b = 36
 -- program is finished running --
