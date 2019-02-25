@@ -50,10 +50,10 @@
 	lw $t1, yInt($zero)
 	lw $t2, tInt($zero)
 	
-	add $t0, $t0, 8
-	mul $t0, $t0, 4
-	add $t0, $t0, $t1
-	sub $t0, $t2, $t0
+	addi $t0, $t0, 8 #Z + 8
+	mul $t0, $t0, 4 # Z * 4
+	sub $t0, $t2, $t0 # T - Z
+	add $t0, $t0, $t1 # Z +  Y
 
 	sw $t0, bInt($zero)
 .end_macro
@@ -81,4 +81,3 @@ main:
 	Eq2()
 	print_int(bInt)
 	exit()
-	
