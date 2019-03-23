@@ -3,50 +3,47 @@
 # name: Charles Staal
 # scccid: 01040168
 ##############################################################
+
 .text
+
 ##############################
 # PART 1 FUNCTIONS 
 ##############################
 
 toUpper:
-	# a0 is string, a1 length of string
-	# t0 is counter
-	# t1 is char value
-	# t2 is memory address of #a0
-	# a0 = string uppcased
+	# t0 = byte counter
+	# t1 = char value
+	# t2 = offset
 	# v0 = return value
-	la $t3, ($a0)
-	li $t0, 0
-	li $t1, 0
-	li $t2, 0
+	
+	li $t0, 0							# intialize byte counter to zero
+	
 	loopToUpper:
-		beq $a1, $t0, doneToUpper		# if t0 = length of string, it is finished
-		lb  $t1,($t2)					# load the byte to be manipulated from the address
-		beq $t1, $0, doneToUpper		# if a null bit, we are at the end of the string
+		add $t2, $a0, $t0				# add base address to counter creating offset address
+		lb $t1, 0($t2)					# load byte to be manipulated
+		beq $t1, '\0' doneToUpper		# if a null bit, we are at the end of the string
 		blt $t1, 'a', endofloopToUpper	# if char is less than 97 skip it
 		bgt $t1, 'z', endofloopToUpper	# or if char is greater than 122 skip it
-		and $t1, $t1, '_'				# bitwise AND to clear 5th bit 
-		sb $t1, ($t2)					# Store the manipulated byte to the address
+		and $t1, $t1, '_'				# clear 5th bit
+		sb $t1, 0($t2)					# store manipulated byte
 		endofloopToUpper:				#
-		addi $t0, $t0, 1				# Increase counter
-		addi $t2, $t2, 1				# Go to next byte
+		addi $t0, $t0, 1				# increment counter
 		b loopToUpper					#
 	doneToUpper:						#
-	move $v0, $a0						#
+	move $v0, $a0						# move final value to return value
 	jr $ra								# return to main
 
 length2Char:
 	# v0 = counter/ strlength
-	# a0 = string
-	# a1 = specified terminator
+	# a0 = address of string
+	# a1 = address of specified terminator
 	# t1 = string address
 	li $v0, 0
-	la $t1, ($a0)						# Load string address
 	loopLength2Char:					#
-		lb $t0, ($t1)					# load char
-		beq $t0, $a1, doneLength2Char	# if char = terminator
+		lb $t0, 0($a0)					# load char
+		beq $t0, '\0', doneLength2Char	# if char = terminator
 		addi $v0, $v0, 1				# increase counter
-		addi $t1, $t1, 1				# go to next byte
+		addi $a0, $a0, 1				# go to next byte
 		b loopLength2Char				#
 	doneLength2Char:					#
 	jr $ra								#
