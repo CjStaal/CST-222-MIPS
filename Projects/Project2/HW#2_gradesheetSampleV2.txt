@@ -1,0 +1,434 @@
+HW#2 Gradesheets     Project HW2
+
+HW2 Results
+Name: Student - SBUID: 999999999 
+
+**********************************************************************
+
+If the program goes to infinite loop or blow up (abend) you are graded
+up to that point.
+
+jal toUpper called 1 times. Minimum # of calls made? Yes (+0.8)
+jal strcmp called 1 times. Minimum # of calls made? Yes (+0.8)
+jal toMorse called 1 times. Minimum # of calls made? Yes (+0.8)
+jal createKey called 1 times. Minimum # of calls made? Yes (+0.8)
+jal keyIndex called 1 times. Minimum # of calls made? Yes (+0.8)
+
+**********************************************************************
+
+
+=== TESTING toUpper - Test Case 1: Empty String ===
+Input src: 
+Expected output: 
+Actual output: 
+
+String turned to uppercase? Yes (+1)
+Expected return value: 0x1001028e
+Actual return value: 0x1001028e
+Correct Address Returned? Yes (+1)
+
+
+=== TESTING toUpper - Test Case 2: All uppercase characters ===
+Input src: ALLUPPERCASECHARACTERS
+Expected output: ALLUPPERCASECHARACTERS
+Actual output: ALLUPPERCASECHARACTERS
+
+String turned to uppercase? Yes (+1)
+Expected return value: 0x100102b0
+Actual return value: 0x100102b0
+Correct Address Returned? Yes (+1)
+
+
+=== TESTING toUpper - Test Case 3: All lowercase characters in string ===
+Input src: alllowercasecharacters
+Expected output: ALLLOWERCASECHARACTERS
+Actual output: ALLLOWERCASECHARACTERS
+
+String turned to uppercase? Yes (+1)
+Expected return value: 0x100102ba
+Actual return value: 0x100102ba
+Correct Address Returned? Yes (+1)
+
+
+=== TESTING toUpper - Test Case 4: Camel Case string ===
+Input src: CamelCaseTestingString
+Expected output: CAMELCASETESTINGSTRING
+Actual output: CAMELCASETESTINGSTRING
+
+String turned to uppercase? Yes (+1)
+Expected return value: 0x100102a9
+Actual return value: 0x100102a9
+Correct Address Returned? Yes (+1)
+
+
+=== TESTING toUpper - Test Case 5: Symbols and spaces ===
+Input src: #symbols & spaces!
+Expected output: #SYMBOLS & SPACES!
+Actual output: #SYMBOLS & SPACES!
+
+String turned to uppercase? Yes (+1)
+Expected return value: 0x100102a6
+Actual return value: 0x100102a6
+Correct Address Returned? Yes (+1)
+
+
+=== TESTING length2char - Test Case 1: Character appears multiple times in String ===
+Input src: Looking for characters.
+Input src: o
+Expected output: 1
+Actual Output: 1
+Correct index of character? Yes (+2)
+
+
+=== TESTING length2char - Test Case 1: Character appears multiple times in String ===
+Input src: Looking for characters.
+Input src: space
+Expected output: 7
+Actual Output: 7
+Correct index of character? Yes (+2)
+
+
+=== TESTING length2char - Test Case 3: Looking for punctuation ===
+Input src: Looking for characters.
+Input src: .
+Expected output: 22
+Actual Output: 22
+Correct index of character? Yes (+2)
+
+
+=== TESTING length2char - Test Case 4: Looking for NULL ===
+Input src: Looking for characters.
+Input src: NULL
+Expected output: 23
+Actual Output: 23
+Correct index of character? Yes (+2)
+
+
+=== TESTING strcmp Test Case 1: numCompares = -3 ===
+Input src: HI CSE220!
+Input src: HI CSE220!
+Input for numCompares:-3
+Expected output: 0,0
+Actual output: 0,0
+Correct number of matching chars returned? Yes (+1)
+Complete match? Yes (+1)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING strcmp Test Case 2: Matching strings ===
+Input src: Hi Cse220!
+Input src: Hi Cse220!
+Input for numCompares:0
+Expected output: 10,1
+Actual output: 10,1
+Correct number of matching chars returned? Yes (+1)
+Complete match? Yes (+1)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING strcmp Test Case 3: Matching substring ===
+Input src: Hi Cse220!
+Input src: Hi Cse220! Isn't MIPS Fun!
+Input for numCompares:0
+Expected output: 10,0
+Actual output: 10,0
+Correct number of matching chars returned? Yes (+1)
+Complete match? Yes (+1)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING strcmp Test Case 4: Matching substring with larger numCompares ===
+Input src: Hi Cse220!
+Input src: Hi Cse220! Isn't MIPS Fun!
+Input for numCompares:15
+Expected output: 0,0
+Actual output: 0,0
+Correct number of matching chars returned? Yes (+1)
+Complete match? Yes (+1)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING strcmp Test Case 5: Matching strings with larger numCompares than string length ===
+Input src: Hi Cse220!
+Input src: Hi Cse220! Isn't MIPS fun!
+Input for numCompares:15
+Expected output: 0,0
+Actual output: 0,0
+Correct number of matching chars returned? Yes (+1)
+Complete match? Yes (+1)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING strcmp Test Case 6: Matching substrings with numCompares smaller than substring length ===
+Input src: Hi Cse220!
+Input src: Hi Cse220! Isn't MIPS Fun!
+Input for numCompares:5
+Expected output: 5,1
+Actual output: 5,1
+Correct number of matching chars returned? Yes (+1)
+Complete match? Yes (+1)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING strcmp Test Case 7: Matching strings with larger numCompares than string length ===
+Input src: Hi Cse220!
+Input src: Hi Cse220!
+Input for numCompares:6
+Expected output: 6,1
+Actual output: 6,1
+Correct number of matching chars returned? Yes (+1)
+Complete match? Yes (+1)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING strcmp Test Case 8: Matching substrings with larger numCompares substring length ===
+Input src: Hi Cse220!
+Input src: Hi Cse220! Isn't MIPS fun
+Input for numCompares:15
+Expected output: 0,0
+Actual output: 0,0
+Correct number of matching chars returned? Yes (+1)
+Complete match? Yes (+1)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING toMorse Test Case 1: Basic string ===
+Input plaintext: ABC
+Input mcmsg: @@@@@@@@@@@@@@@@@@@@@@@@@
+Input size: 24
+Expected output: .-x-...x-.-.xx
+Actual output: .-x-...x-.-.xx
+
+Expected output: 15,1
+Actual output: 15,1
+Correct morse code? Yes (+2)
+Correct length returned? Yes (+1)
+Correct completely encoded returned? Yes (+1)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING toMorse Test Case 2: Basic string with lowercase char ===
+Input plaintext: ABCdE
+Input mcmsg: @@@@@@@@@@@@@@@@@@@@@@@@@
+Input size: 24
+Expected output: .-x-...x-.-.x.xx
+Actual output: .-x-...x-.-.x.xx
+
+Expected output: 17,1
+Actual output: 17,1
+Correct morse code? Yes (+2)
+Correct length returned? Yes (+1)
+Correct completely encoded returned? Yes (+1)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING toMorse Test Case 3: Size is < 0 ===
+Input plaintext: ABCdE
+Input mcmsg: @@@@@@@@@@@@@@@@@@@@@@@@@
+Input size: -10
+Expected output: @@@@@@@@@@@@@@@@@@@@@@@@@
+Actual output: @@@@@@@@@@@@@@@@@@@@@@@@@
+
+Expected output: 0,0
+Actual output: 0,0
+Correct morse code? Yes (+2)
+Correct length returned? Yes (+1)
+Correct completely encoded returned? Yes (+1)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING toMorse Test Case 4: NULL plaintext ===
+Input plaintext: 
+Input mcmsg: @@@@@@@@@@@@@@@@@@@@@@@@@
+Input size: 24
+Expected output: 
+Actual output: 
+
+Expected output: 1,1
+Actual output: 1,1
+Correct morse code? Yes (+2)
+Correct length returned? Yes (+1)
+Correct completely encoded returned? Yes (+1)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING toMorse Test Case 5: Basic string with buffer smaller than required ===
+Input plaintext: ABC
+Input mcmsg: @@@@@@@@@@@@@@@@@@@@@@@@@
+Input size: 4
+Expected output: .-x
+Actual output: .-x
+
+Expected output: 4,0
+Actual output: 4,0
+Correct morse code? Yes (+2)
+Correct length returned? Yes (+1)
+Correct completely encoded returned? Yes (+1)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING createKey Test Case 1: Basic string ===
+Input phrase: computer science is fun
+Input key: @@@@@@@@@@@@@@@@@@@@@@@@@@@
+Expected output: COMPUTERSINFABDGHJKLQVWXYZ@
+Actual output: COMPUTERSINFABDGHJKLQVWXYZ@
+
+Correct key? Yes (+2)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING createKey Test Case 2: Basic string with symbols ===
+Input phrase: Computer_Science!Is^Fun!!!
+Input key: @@@@@@@@@@@@@@@@@@@@@@@@@@@
+Expected output: COMPUTERSINFABDGHJKLQVWXYZ@
+Actual output: COMPUTERSINFABDGHJKLQVWXYZ@
+
+Correct key? Yes (+2)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING createKey Test Case 3: NULL string ===
+Input phrase: 
+Input key: @@@@@@@@@@@@@@@@@@@@@@@@@@@
+Expected output: ABCDEFGHIJKLMNOPQRSTUVWXYZ@
+Actual output: ABCDEFGHIJKLMNOPQRSTUVWXYZ@
+
+Correct key? Yes (+2)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING createKey Test Case 4: Mixed upper and lower case ===
+Input phrase: Computer Science Is Fun
+Input key: @@@@@@@@@@@@@@@@@@@@@@@@@@@
+Expected output: COMPUTERSINFABDGHJKLQVWXYZ@
+Actual output: COMPUTERSINFABDGHJKLQVWXYZ@
+
+Correct key? Yes (+2)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING keyIndex - Test Case 1: Bad Symbol ===
+Input src: xxx--.x-.x.xx
+Expected output: -1
+Actual output: -1
+Correct index of key? Yes (+2)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING keyIndex - Test Case 2: Empyty String ===
+Input src: NULL
+Expected output: -1
+Actual output: -1
+Correct index of key? Yes (+2)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING keyIndex - Test Case 3: Less than 3 chars ===
+Input src: --
+Expected output: -1
+Actual output: -1
+Correct index of key? Yes (+2)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING keyIndex - Test Case 4: Match to -x- ===
+Input src: -x----.....x
+Expected output: 16
+Actual output: 16
+Correct index of key? Yes (+2)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING keyIndex - Test Case 5: Match to .-. ===
+Input src: .-.x...x
+Expected output: 3
+Actual output: 3
+Correct index of key? Yes (+2)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING FMCEncrypt Test Case 1: Correctly encrypt with enough space ===
+Input src: COMPUTER SCIENCE IS AWESOME!
+Input src: computer science is fun
+Input src: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+Input src: 35
+Expected output: NRDDUETGLSCVFMRRPQKKSTUQCWHGVNJ
+Actual output: NRDDUETGLSCVFMRRPQKKSTUQCWHGVNJ
+
+Correct encryption? Yes (+4)
+Expected output: 0x1001041c,1
+Actual output: 0x1001041c,1
+Correct address? Yes (+1)
+Correct return completely encoded? Yes (+1)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING FMCEncrypt Test Case 2: Correctly encrypt with NOT enough space ===
+Input src: COMPUTER SCIENCE IS AWESOME!
+Input src: computer science is fun
+Input src: @@@@@@@@@@@@@@@@@@@@@@@@@
+Input src: 20
+Expected output: NRDDUETGLSCVFMRRPQK
+Actual output: NRDDUETGLSCVFMRRPQK
+
+Correct encryption? Yes (+4)
+Expected output: 0x1001040c,0
+Actual output: 0x1001040c,0
+Correct address? Yes (+1)
+Correct return completely encoded? Yes (+1)
+Stack Pointer return to orig position? Yes (+0.25)
+Saved Registers preserved? Yes (+0.25)
+
+
+=== TESTING Extra Credit FMCDecrypt Test Case: Correctly decrypt with enough space ===
+Input src: NRDDUETGLSCVFMRRPQKKSTUQCWHGVNJ
+Input src: computer science is fun
+Input src: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+Input src: 35
+Expected output: COMPUTER SCIENCE IS AWESOME!
+Actual output: COMPUTER SCIENCE IS AWESOME!
+
+Correct decryption? Success 
+Expected output: 0x100103c6,1
+Actual output: 0x100103c6,1
+Correct Address? Success 
+Correct return completely encoded? Success Yes (+5) 
+
+Input src: To be provided during the test
+Input src: xxxxxxxx not known by you
+Input src: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+Input src: 35
+Expected output: ????
+Actual output: ????
+
+Correct decryption? Success 
+Expected output: 0x100103c6,1
+Actual output: 0x100103c6,1
+Correct Address? Success 
+Correct return completely encoded? Success Yes (+5) 
+
+
+Score = 110.0/100
