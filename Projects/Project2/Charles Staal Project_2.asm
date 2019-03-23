@@ -38,39 +38,111 @@ length2Char:
 	# a0 = address of string
 	# a1 = address of specified terminator
 	# t1 = string address
+	# t2 = terminator char
 	li $v0, 0
+	beqz $a1, a1null
+	lb $t2, 0($a1)
 	loopLength2Char:					#
 		lb $t0, 0($a0)					# load char
-		beq $t0, '\0', doneLength2Char	# if char = terminator
+		beq $t0, $t2, doneLength2Char	# if char = terminator
 		addi $v0, $v0, 1				# increase counter
 		addi $a0, $a0, 1				# go to next byte
 		b loopLength2Char				#
 	doneLength2Char:					#
 	jr $ra								#
+	a1null:
+		li $t2, '\0'
+		b loopLength2Char
 
 strcmp:
-	# a0 = str1
-	# t0 = str1 address
-	# a1 = str2
-	# t1 = str2 address
+	# s0 = str1
+	# s1 = str2
+	# s2 str1byte
+	# s3 str2byte
 	# a2 = length
+	# t0 = offset of str1
+	# t1 = offset of str2
 	# t2 = length of str1
 	# t3 = length of str2
+	# t4 = counter
+	# v0 = if strings matched, 1, otherwise 0
+	# t7 = return address
+	#Save registers
+	move $t7, $ra
+	
 	move $s0, $a0						# save str1 to s0
 	move $s1, $a1						# save str2 to s1
 	move $s2, $a2						# save length to s2
-	li $a1, 0							# set terminator to null for length2char
-	jal length2Char						# call length2char for str2
+	
+	li $a1, 0							# set null terminator for length2char
+	
+	move $a0, $s0
+	j length2Char						# call length2char for str2
 	move $t2, $v0						# move return value to t2
+	
 	move $a0, $s1						# move str2 to argument
-	jal length2Char						# call length2char for str2
+	j length2Char						# call length2char for str2
 	move $t3, $v0						# move return value to t3
-	move $a0, $s0						# recall str1 to a0
-	move $a1, $s1						# recall str2 to a1
+	
 	move $a2, $s2						# recall length to a2
+	
+	# recall the length
+	
+	bltz $a2, error						# if length is less than zero, return 0,0
+	bgt $a2, $t2, error					# if length is greater than length of string1, return 0,0
+	bgt $a2, $t3, error					# if length is greater than length of string2, return 0,0
+	
+	# initialize the things
+	li $t0, 0
+	li $t1, 0
+	li $t4, 0
+	li $v0, 1
 
-		 
-	jr $ra
+	beqz $a2, a2isZero					# if a2 is zero, find out if strings are equal, if not, find the difference and add that to v1, and set v0 to 0
+	
+	strCmpLoop:
+		beq $t4, $a2, done				# it is done once we get to the end of the strings
+		add $t0, $s0, $t4				
+		add $t1, $s1, $t4
+		lb $s2, 0($t0)
+		lb $s3, 0($t1)
+		bne $s2, $s3, different
+		add $v1, $v1, 1
+		returntoLoop:
+		add $t4, $t4, 1
+		b strCmpLoop
+		
+		
+	# if one string is larger than the other, add the difference to the amount of different chars and set v0 to 0
+	a2isZero:
+		bne $t2, $t3, strDiffSize
+		move $a2, $t2
+		b strCmpLoop
+	
+	
+	strDiffSize:
+		li $v0, 0
+		blt $t2, $t3, t2Lt3
+		move $a2, $t3
+		b strCmpLoop
+	
+	t2Lt3:
+		move $a2, $t2
+		b strCmpLoop
+	
+	
+	error:
+		li $v0, 0
+		li $v1, 0
+		b done
+		
+	different:
+		li $v0, 0
+		b returntoLoop
+		
+	done:
+		move $ra, $t7
+		jr $ra
 
 ##############################
 # PART 2 FUNCTIONS
