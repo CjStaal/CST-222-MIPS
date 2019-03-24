@@ -152,18 +152,25 @@ toMorse:
 	# a0, s0 = address of source string
 	# a1, s1 = address of destination string
 	# a2, s2 = total numbner of bytes allocated including the null byte. if < 1, return 0,0
+	# s3 = byte to be converted from source string
+	# s4 = s3 value - 33 which will give index of character in morse array
 	
 	# v0 = return length of morse code, including '\0'
 	# v1 = returns 1 if string was completely and correctly encoded, otherwise 0
 	
 	# t0 = offset + base address of source string
-	# t1 = index counter
-	# t7 = return address
-	# Morse Code Array 0->57 = ASCII 33->90
-	# s7 = modified source string
-	move $t7, $ra # save return address
+	# t1 = index counter for source string
 	
-	blt $a2, 1, error 		# if a2 < 1, invalid, return 0,0
+	# t3 = offset + base address of destination string
+	# t4 = index counter for destination string
+	
+	# s6 = return address
+	# s7 = uppercased source string
+	
+	# Morse Code Array 0->57 = ASCII 33->90
+	move $s6, $ra						# save return address
+	
+	blt $a2, 1, error					# if a2 < 1, invalid, return 0,0
 	
 	# Save arguments
 	move $s0, $a0
@@ -172,40 +179,57 @@ toMorse:
 	
 	# need to convert message to uppercase
 	# a0 is still the source string so we can just call toUpper
-	jal toUpper				# v0 now holds the formatted string
-	move $s7, $v0			# s7 is now the uppercased string
-	la $s0, ($s7)			# address of uppercased string
-	
-	
-	li $v1, 1				# defaults to complete and correct encoding
+	jal toUpper							# v0 now holds the formatted string
+	move $s7, $v0						# s7 is now the uppercased string
+	la $s0, ($s7)						# address of uppercased string
+
+	li $v1, 1							# defaults to complete and correct encoding
 	
 	toMorseLoop:
-		add $t0, $s0, $t1			
-		lb $s0, 0($t0)
-		beq $s0, '\0', done
-		beq $s0, ' ', byteisSpace
-		
+		beq $t4, $s2, outOfSpace		# actually needs to check index counter for destination string
+		add $t0, $s0, $t1				# create offset + base address for char in source string
+		lb $s3, 0($t0)
+		beq $s3, '\0', addNull
+		beq $s3, ' ', byteisSpace
 		#needs to be between 33->90 in ascii table
 		blt $s0, 33, outOfRange
 		bgt $s0, 90, outOfRange
+		b inRange
 		
 		returnToMorseLoop:
 		addi $t1, $t1, 1
 		b toMorseLoop
+		
+	inRange:
+		sub $s4, $s3, 33			# gives index of string in morse array
+		# add the characters of the morse loop in to the destination string
+		
+		b returnToMorseLoop
 	
-	outOfRange: 			# skip over if character does not have a morse code pattern
+	outOfRange:						# skip over if character does not have a morse code pattern
 		li $v1, 0
 		b returnToMorseLoop
+		
+	outOfSpace:
+		li $v0, 0
+		b addNull
+		
 	byteisSpace:
-	
+		returnToMorseLoop
+		
 	error:
 		li $v0, 0
 		li $v1, 0
 		b done
-	done:
 	
-	move $a0, $s1
-	length2char				# v0 is the length of morsecode, including '\0'
+	addNull:
+		# add null character to end of destination string
+		move $a0, $s1
+		length2char
+		b done
+		
+	done:
+	move $ra, $s6
 	jr $ra
 
 createKey:
