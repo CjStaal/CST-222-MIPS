@@ -148,7 +148,64 @@ strcmp:
 ##############################
 
 toMorse:
-	#Define your code here
+
+	# a0, s0 = address of source string
+	# a1, s1 = address of destination string
+	# a2, s2 = total numbner of bytes allocated including the null byte. if < 1, return 0,0
+	
+	# v0 = return length of morse code, including '\0'
+	# v1 = returns 1 if string was completely and correctly encoded, otherwise 0
+	
+	# t0 = offset + base address of source string
+	# t1 = index counter
+	# t7 = return address
+	# Morse Code Array 0->57 = ASCII 33->90
+	# s7 = modified source string
+	move $t7, $ra # save return address
+	
+	blt $a2, 1, error 		# if a2 < 1, invalid, return 0,0
+	
+	# Save arguments
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	
+	# need to convert message to uppercase
+	# a0 is still the source string so we can just call toUpper
+	jal toUpper				# v0 now holds the formatted string
+	move $s7, $v0			# s7 is now the uppercased string
+	la $s0, ($s7)			# address of uppercased string
+	
+	
+	li $v1, 1				# defaults to complete and correct encoding
+	
+	toMorseLoop:
+		add $t0, $s0, $t1			
+		lb $s0, 0($t0)
+		beq $s0, '\0', done
+		beq $s0, ' ', byteisSpace
+		
+		#needs to be between 33->90 in ascii table
+		blt $s0, 33, outOfRange
+		bgt $s0, 90, outOfRange
+		
+		returnToMorseLoop:
+		addi $t1, $t1, 1
+		b toMorseLoop
+	
+	outOfRange: 			# skip over if character does not have a morse code pattern
+		li $v1, 0
+		b returnToMorseLoop
+	byteisSpace:
+	
+	error:
+		li $v0, 0
+		li $v1, 0
+		b done
+	done:
+	
+	move $a0, $s1
+	length2char				# v0 is the length of morsecode, including '\0'
 	jr $ra
 
 createKey:
@@ -244,6 +301,5 @@ MorseW: .asciiz ".--"
 MorseX: .asciiz "-..-"
 MorseY: .asciiz "-.--"
 MorseZ: .asciiz "--.."
-
 
 FMorseCipherArray: .asciiz ".....-..x.-..--.-x.x..x-.xx-..-.--.x--.-----x-x.-x--xxx..x.-x.xx-.x--x-xxx.xx-"
