@@ -149,7 +149,7 @@ strcmp:
 ##############################
 ammendString:
 	# a0 = address of string to be ammended
-	# a1 = address of string to be added
+	# a1 = offset address of string to be added
 	# a2 = index of a1 placement in to a0
 	# a3 = size of a0
 	
@@ -158,16 +158,16 @@ ammendString:
 	# t2 = offset of a0
 	# t3 = offset of a1
 	# t4 = byte to be added to a0
-	
 	# v0 = address of a0
 	# v1 = new a3
+	
 	ammendLoop:
 		add $t0, $a0, $t2
 		add $t1, $a1, $t3
 		lb $t4, 0($t1)
 		beq $a2, $a3, stringFull
 		beq $t4, '\0', finishedAmmend
-		sb $t4, 0($t1)
+		sb $t4, 0($t0)
 		addi $t2, $t2, 1
 		addi $t3, $t3, 1
 		b ammendLoop
@@ -188,16 +188,17 @@ morseLookup:
 	# v1 = 1 if found, otherwise 0
 	# t0 = address of base array
 	
-	la $t0, MorseCode
-	blt $a0, 33, notfound
+	la $t0, MorseCode				# Load address of MorseCode array
+	blt $a0, 33, notfound			# Make sure the char is in range
 	bgt $a0, 90, notfound
 	
-	sub $a0, $a0, 33
+	sub $a0, $a0, 33				# subtract 33 so now we are indexed in to the MorseCode array
 	add $a0, $a0, $a0
-	add $a0, $a0, $a0
-	
-	add $v0, $a0, $t0
-	li $v1, 1
+	add $a0, $a0, $a0				# Last two instructions is to multiply by 4 to word-align
+
+	add $v0, $a0, $t0				# add offset + base address
+	move $v0, $a0					# move address in to return value
+	li $v1, 1						# toggle showing that we have it
 	jr $ra
 	
 	notfound:
@@ -252,9 +253,9 @@ toMorse:
 		move $a2, $s4			# index of s1 (where to start ammending)
 		move $a3, $s2			# destination string size
 		jal ammendString		# v0 = address of ammended string, v1 = new s4
-		move $s1, $v0
-		move $s4, $v1
-		beq $s2, $s4, filled
+		move $s1, $v0			# move return address in to s1
+		move $s4, $v1			# move new s1 index back in
+		beq $s2, $s4, filled	# make sure we are not filled
 		addi $s4, $s4, 1		# increment the offset/index for the destination string
 		skip:
 		addi $s3, $s3, 1		# increment the offset/index for the source string
