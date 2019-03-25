@@ -147,8 +147,69 @@ strcmp:
 ##############################
 # PART 2 FUNCTIONS
 ##############################
+ammendString:
+	# a0 = address of string to be ammended
+	# a1 = address of string to be added
+	# a2 = index of a1 placement in to a0
+	# a3 = size of a0
+	
+	# t0 = address + offset of a0
+	# t1 = address + offset of a1
+	# t2 = offset of a0
+	# t3 = offset of a1
+	# t4 = byte to be added to a0
+	
+	# v0 = address of a0
+	# v1 = new a3
+	ammendLoop:
+		add $t0, $a0, $t2
+		add $t1, $a1, $t3
+		lb $t4, 0($t1)
+		beq $a2, $a3, stringFull
+		beq $t4, '\0', finishedAmmend
+		sb $t4, 0($t1)
+		addi $t2, $t2, 1
+		addi $t3, $t3, 1
+		b ammendLoop
+	
+	stringFull:
+		move $v0, $a0
+		move $v1, $a3
+		jr $ra
+	
+	finishedAmmend:
+		move $v0, $a0
+		move $v1, $t3
+		jr $ra
+		
+morseLookup:
+	#a0 = character to be looked up
+	#v0 = address of morse string
+	#v1 = 1 if found, otherwise 0
+	
+	blt $a2, 33, notfound
+	bgt $a2, 90, notfound
+	
+	sub $a2, $a2, 33
+	add $a2, $a2, $a2
+	add $a2, $a2, $a2
+	
+	move $v0, $a2
+	
+	li $v1, 1
+	jr $ra
+	
+	notfound:
+		li $v0, 0
+		li $v0, 0
+		jr $ra
 
-toMorse:
+
+
+
+
+
+toMorseNotWorking:
 
 	# a0, s0 = address of source string
 	# a1, s1 = address of destination string
@@ -196,8 +257,8 @@ toMorse:
 		beq $s3, '\0', addNull
 		beq $s3, ' ', byteisSpace
 		#needs to be between 33->90 in ascii table
-		blt $s0, 33, outOfRange
-		bgt $s0, 90, outOfRange
+		blt $s3, 33, outOfRange
+		bgt $s3, 90, outOfRange
 		b inRange
 		
 		returnToMorseLoop:
