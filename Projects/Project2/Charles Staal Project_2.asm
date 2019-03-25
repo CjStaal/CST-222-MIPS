@@ -259,6 +259,7 @@ toMorse:
 		addi $s4, $s4, 1		# increment the offset/index for the destination string
 		skip:
 		addi $s3, $s3, 1		# increment the offset/index for the source string
+		b toMorseLoop
 		
 	filled:
 		add $t0, $a0, $s3
