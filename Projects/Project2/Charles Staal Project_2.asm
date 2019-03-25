@@ -174,7 +174,7 @@ toMorse:
 	# Morse Code Array 0->57 = ASCII 33->90
 	move $s6, $ra						# save return address
 	
-	blt $a2, 1, error					# if a2 < 1, invalid, return 0,0
+	blt $a2, 1, errorToMorse					# if a2 < 1, invalid, return 0,0
 	
 	# Save arguments
 	move $s0, $a0
@@ -206,13 +206,15 @@ toMorse:
 		
 	inRange:
 		li $t5, 0
+		li $t9, 4
 		sub $s4, $s3, 33			# gives index of string in morse array
-		mult $s4, 4					# since words are 4 bytes each
+		mult $s4, $t9					# since words are 4 bytes each
 		add $s4, $s4, $s5			# now we have address of string in array
 		la $t6, 0($s4)				# load the address of the string
 		combine:
 			lb $t7, 0($t6)			# load byte from morsearray
 			beq $t7, '\0', returnToMorseLoop
+			beq $t4, $s2, outOfSpace
 			sb $t7, 0($t3)			# store byte to destination string
 			addi $t4, $t4, 1		# increment destination string index
 			add $t3, $s1, $t4		# increment destination string address
@@ -223,28 +225,29 @@ toMorse:
 	
 	outOfRange:						# skip over if character does not have a morse code pattern
 		li $v1, 0
-		addi $t1, $t1, 1				# increments offset
 		b returnToMorseLoop
 		
 	outOfSpace:
+		lb $t9, '\0'
 		li $v0, 0
+		sb $t9, 0($t3)
 		b addNull
 		
 	byteisSpace:
-		returnToMorseLoop
+		b returnToMorseLoop
 		
-	error:
+	errorToMorse:
 		li $v0, 0
 		li $v1, 0
-		b done
+		b doneToMorse
 	
 	addNull:
 		# add null character to end of destination string
 		move $a0, $s1
-		length2char
-		b done
+		jal length2Char
+		b doneToMorse
 		
-	done:
+	doneToMorse:
 	move $ra, $s6
 	jr $ra
 
