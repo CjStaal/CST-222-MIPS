@@ -178,7 +178,7 @@ ammendString:
 		jr $ra
 	
 	finishedAmmend:
-		move $v0, $a0
+		move $a0, $a0
 		move $v1, $t3
 		jr $ra
 		
@@ -189,15 +189,14 @@ morseLookup:
 	# t0 = address of base array
 	
 	la $t0, MorseCode
+	blt $a0, 33, notfound
+	bgt $a0, 90, notfound
 	
-	blt $a2, 33, notfound
-	bgt $a2, 90, notfound
+	sub $a0, $a0, 33
+	add $a0, $a0, $a0
+	add $a0, $a0, $a0
 	
-	sub $a2, $a2, 33
-	add $a2, $a2, $a2
-	add $a2, $a2, $a2
-	
-	add $v0, $a2, $t0
+	add $v0, $a0, $t0
 	li $v1, 1
 	jr $ra
 	
@@ -206,113 +205,89 @@ morseLookup:
 		li $v0, 0
 		jr $ra
 
-
-
-
-
-
-toMorseNotWorking:
-
-	# a0, s0 = address of source string
-	# a1, s1 = address of destination string
-	# a2, s2 = total numbner of bytes allocated including the null byte. if < 1, return 0,0
-	# s3 = byte to be converted from source string
-	# s4 = s3 value - 33 which will give index of character in morse array
+toMorse:
+	# a0 = address of source string
+	# a1 = address of destination string
+	# a2 = destination string size
+	
+	# s0 = a0/ source string
+	# s1 = a1/ destination string
+	# s2 = a2/ destination string size
+	# s3 = offset of s0
+	# s4 = offset of s1
+	# s5 = character to be encoded
+	# s7 = return address
+	
+	# t0 = offset + base address of a0
+	# t1 = offset + base address of a1
+	# t2 = address of morse string
+	# t4 = character to be encoded
 	
 	# v0 = return length of morse code, including '\0'
 	# v1 = returns 1 if string was completely and correctly encoded, otherwise 0
 	
-	# t0 = offset + base address of source string
-	# t1 = index counter for source string
-	
-	# t3 = offset + base address of destination string
-	# t4 = index counter for destination string
-	# t5 = morse index
-	# t6 = address
-	# t7 = byte in morse array
-	# s5 = address of MorseCode array
-	# s6 = return address
-	# s7 = uppercased source string
-	
-	# Morse Code Array 0->57 = ASCII 33->90
-	move $s6, $ra						# save return address
-	
-	blt $a2, 1, errorToMorse					# if a2 < 1, invalid, return 0,0
-	
-	# Save arguments
-	move $s0, $a0
+	# save registers
 	move $s1, $a1
 	move $s2, $a2
+	move $s7, $ra
 	
-	# need to convert message to uppercase
-	# a0 is still the source string so we can just call toUpper
-	jal toUpper							# v0 now holds the formatted string
-	move $s7, $v0						# s7 is now the uppercased string
-	la $s0, ($s7)						# address of uppercased string
-	la $s5, MorseCode
-	li $v1, 1							# defaults to complete and correct encoding
+	jal toUpper
+	move $s0, $v0						# save the uppercased string address
 	
+	blt $a2, 1, invalidEntry
+	
+	li $v1, 1
+	li $s3, 0
+	li $s4, 0
 	toMorseLoop:
-		beq $t4, $s2, outOfSpace		# actually needs to check index counter for destination string
-		add $t0, $s0, $t1				# create offset + base address for char in source string
-		lb $s3, 0($t0)					# Loads byte from source string
-		beq $s3, '\0', addNull
-		beq $s3, ' ', byteisSpace
-		#needs to be between 33->90 in ascii table
-		blt $s3, 33, outOfRange
-		bgt $s3, 90, outOfRange
-		b inRange
+		beq $s4, $s2, filled
+		add $t0, $a0, $s3
+		lb $s5, 0($t0)			# character from source string to be encoded
+		beq $s5, '\0', filled
+		move $a0, $s5			# move that character in to argument 0
+		jal morseLookup			# returns address of the morse string in to v0 for character in s0
+		beq $v1, 0, skip		# if it returned 0 in v1, that means there is no morse for that character, so skip it
+		move $a0, $s1			# address of destination string
+		move $a1, $v0			# address of morse string
+		move $a2, $s4			# index of s1 (where to start ammending)
+		move $a3, $s2			# destination string size
+		jal ammendString		# v0 = address of ammended string, v1 = new s4
+		move $s1, $v0
+		move $s4, $v1
+		beq $s2, $s4, filled
+		addi $s4, $s4, 1		# increment the offset/index for the destination string
+		skip:
+		addi $s3, $s3, 1		# increment the offset/index for the source string
 		
-		returnToMorseLoop:
-		addi $t1, $t1, 1				# increments offset
-		b toMorseLoop
-		
-	inRange:
-		li $t5, 0
-		li $t9, 4
-		sub $s4, $s3, 33			# gives index of string in morse array
-		mult $s4, $t9					# since words are 4 bytes each
-		add $s4, $s4, $s5			# now we have address of string in array
-		la $t6, 0($s4)				# load the address of the string
-		combine:
-			lb $t7, 0($t6)			# load byte from morsearray
-			beq $t7, '\0', returnToMorseLoop
-			beq $t4, $s2, outOfSpace
-			sb $t7, 0($t3)			# store byte to destination string
-			addi $t4, $t4, 1		# increment destination string index
-			add $t3, $s1, $t4		# increment destination string address
-			addi $s5, $s5, 1 		# increment morse address by 1
-			b combine
-		# add the characters of the morse loop in to the destination string
-		b returnToMorseLoop
-	
-	outOfRange:						# skip over if character does not have a morse code pattern
+	filled:
+		add $t0, $a0, $s3
+		add $t1, $a1, $s4
+		lb $t4, 0($t0)
+		beq $t4, '\0', finishedCorrectly
 		li $v1, 0
-		b returnToMorseLoop
+		finishedCorrectly:
+		sb $0, 0($t1)
 		
-	outOfSpace:
-		lb $t9, '\0'
-		li $v0, 0
-		sb $t9, 0($t3)
-		b addNull
-		
-	byteisSpace:
-		b returnToMorseLoop
-		
-	errorToMorse:
-		li $v0, 0
-		li $v1, 0
-		b doneToMorse
-	
-	addNull:
-		# add null character to end of destination string
 		move $a0, $s1
+		move $a1, $t5
 		jal length2Char
-		b doneToMorse
 		
-	doneToMorse:
-	move $ra, $s6
-	jr $ra
+		b endToMorse
+	
+	invalidEntry:
+		li $v0, 0
+		li $v0, 0
+		b endToMorse
+		
+	unfinished:
+		li $v1, 0
+
+	endToMorse:
+		move $ra, $s7
+		jr $ra
+
+
+
 
 createKey:
 	#Define your code here
