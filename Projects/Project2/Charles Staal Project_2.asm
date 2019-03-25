@@ -183,9 +183,12 @@ ammendString:
 		jr $ra
 		
 morseLookup:
-	#a0 = character to be looked up
-	#v0 = address of morse string
-	#v1 = 1 if found, otherwise 0
+	# a0 = character to be looked up
+	# v0 = address of morse string
+	# v1 = 1 if found, otherwise 0
+	# t0 = address of base array
+	
+	la $t0, MorseCode
 	
 	blt $a2, 33, notfound
 	bgt $a2, 90, notfound
@@ -194,8 +197,7 @@ morseLookup:
 	add $a2, $a2, $a2
 	add $a2, $a2, $a2
 	
-	move $v0, $a2
-	
+	add $v0, $a2, $t0
 	li $v1, 1
 	jr $ra
 	
