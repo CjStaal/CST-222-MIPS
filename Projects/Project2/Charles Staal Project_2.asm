@@ -234,6 +234,8 @@ toMorse:
 
 createKey:
 	#Define your code here
+	# a0 = Starting address of phrase
+	# a1 = starting address of 26 bytes of memory for output phrase
 	jr $ra
 
 keyIndex:
