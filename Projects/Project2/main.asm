@@ -23,25 +23,32 @@ strcmp_str1: .asciiz "MIPS!!"
 strcmp_str2: .asciiz "MIPS - Millions.of.Instruction.Per...Second"
 
 # toMorse
-toMorse_header: .asciiz "\n\n********* toMorse *********\n"
+toMorse_header: .asciiz "\n\n********* toMorse1 *********\n"
 toMorse_plaintext: .asciiz "MIPS!!"
-toMorse_mcmsg: .space 30
+toMorse_mcmsg: .space 13
 .align 2
-toMorse_size: .word 30
+toMorse_size: .word 13
 
 # toMorse2
-toMorse_header2: .asciiz "\n\n********* toMorse *********\n"
+toMorse_header2: .asciiz "\n\n********* toMorse2 *********\n"
 toMorse_plaintext2: .asciiz "M I P S ! !"
 toMorse_mcmsg2: .space 64
 .align 2
 toMorse_size2: .word 64
 
 #toMorse3
-toMorse_header3: .asciiz "\n\n********* toMorse *********\n"
+toMorse_header3: .asciiz "\n\n********* toMorse3 *********\n"
 toMorse_plaintext3: .asciiz "M IP S ! ! "
 toMorse_mcmsg3: .space 64
 .align 2
 toMorse_size3: .word 64
+
+# toMorse4
+toMorse_header4: .asciiz "\n\n********* toMorse4 *********\n"
+toMorse_plaintext4: .asciiz "M_I"
+toMorse_mcmsg4: .space 6
+.align 2
+toMorse_size4: .word 6
 
 # createKey
 createKey_header: .asciiz "\n\n********* createKey *********\n"
@@ -287,6 +294,41 @@ main:
 
 	print_string(str_result)
 	print_string(toMorse_mcmsg3)
+	print_newline
+
+	print_string(str_return)
+	print_int($t0)
+	print_newline
+
+	print_string(str_return)
+	print_int($t1)
+	print_newline
+	
+	############################################
+	# TEST CASE for toMorse
+	############################################
+	print_string(toMorse_header4)
+	print_string(str_input)
+	print_string(toMorse_plaintext4)
+	print_newline
+	print_string(str_input)
+	print_string(toMorse_mcmsg4)
+	print_newline
+	print_string(str_input)
+	lw $t9, toMorse_size4
+	print_int($t9)
+	print_newline
+
+	la $a0, toMorse_plaintext4
+	la $a1, toMorse_mcmsg4
+	lw $a2, toMorse_size4
+	jal toMorse
+
+	move $t0, $v0
+	move $t1, $v1
+
+	print_string(str_result)
+	print_string(toMorse_mcmsg4)
 	print_newline
 
 	print_string(str_return)
