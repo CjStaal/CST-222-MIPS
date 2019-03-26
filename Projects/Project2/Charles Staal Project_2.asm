@@ -67,7 +67,8 @@ strcmp:
 	# t2 = length of str1
 	# t3 = length of str2
 	# t4 = counter
-	# v0 = if strings matched, 1, otherwise 0
+	# v0 = number of matching characters
+	# v1 = if strings matched, 1, otherwise 0
 	# t7 = return address
 	# s7 = preserve length of str1 during jump
 
@@ -96,8 +97,8 @@ strcmp:
 	li $t0, 0							#
 	li $t1, 0							#
 	li $t4, 0							#
-	li $v0, 1							#
-	li $v1, 0							#
+	li $v0, 0							#
+	li $v1, 1							#
 
 	beqz $a2, a2isZero					# if a2 is zero, find out if strings are equal, if not, find the difference and add that to v1, and set v0 to 0
 	
@@ -108,7 +109,7 @@ strcmp:
 		lb $s3, 0($t0)					# load up that there byte from string 1
 		lb $s4, 0($t1)					# load up that there byte from string 2
 		bne $s3, $s4, different			# Are they equal? If not lets go down to label different
-		add $v1, $v1, 1					# Seems like they're equal. Lets increment 'same' counter
+		add $v0, $v0, 1					# Seems like they're equal. Lets increment 'same' counter
 		returntoLoop:					#
 		add $t4, $t4, 1					# Lets increment our index
 		b strCmpLoop					#
@@ -122,7 +123,7 @@ strcmp:
 	
 	
 	strDiffSize:						#
-		li $v0, 0						# Well we know they don't match already there partna'
+		li $v1, 0						# Well we know they don't match already there partna'
 		blt $t2, $t3, t2Lt3				# Lets save whichever one is lower in to s2
 		move $s2, $t3					# right now I guess t3 is lower
 		b strCmpLoop					#
@@ -138,7 +139,7 @@ strcmp:
 		b done							#
 		
 	different:							#
-		li $v0, 0						# They're different. Sound the alarm in v0
+		li $v1, 0						# They're different. Sound the alarm in v1
 		b returntoLoop					#
 		
 	done:								#
@@ -234,14 +235,15 @@ toMorse:
 	# v1 = returns 1 if string was completely and correctly encoded, otherwise 0
 	
 	# save registers
+	move $s0, $a0
 	move $s1, $a1						#
 	move $s2, $a2						#
 	move $s7, $ra						#
 
-	jal toUpper							#
-	move $s0, $v0						# save the uppercased string address
 	
 	blt $a2, 1, invalidEntry			#
+	lb $t4, 0($s0)
+	beq $t4 '\0', endToMorse
 	
 	li $s6, 1							#
 	li $s3, 0							#
@@ -254,7 +256,7 @@ toMorse:
 		beq $s5, '\0', finishedCorrectly#
 		move $a0, $s5					# move that character in to argument 0
 		jal morseLookup					# returns address of the morse string in to v0 for character in s0
-		beq $v1, 0, Incomplete			# if it returned 0 in v1, that means there is no morse for that character, so skip it
+		beq $v1, 0, skip				# if it returned 0 in v1, that means there is no morse for that character, so skip it
 		move $a1, $v0					# address of morse string
 		move $a0, $s1					# address of destination string
 		move $a2, $s4					# index of s1 (where to start ammending)
@@ -286,9 +288,6 @@ toMorse:
 		beq $s4, -1, unfinished
 		b returnFromAddX
 		
-	Incomplete: 
-		li $s6, 0
-		b skip
 		
 	invalidEntry:						#
 		li $v0, 0						#
@@ -304,6 +303,15 @@ toMorse:
 		b endToMorse		
 
 	finishedCorrectly:
+		la $a1, Space
+		move $a0, $s1					# address of destination string
+		move $a2, $s4					# index of s1 (where to start ammending)
+		move $a3, $s2					# destination string size
+		jal ammendString				# v0 = address of ammended string, v1 = new s4
+		move $s1, $v0					# move return address in to s1
+		move $s4, $v1					# move new s1 offset back in
+		beq $s4, -1, unfinished
+		
 		add $t1, $a1, $s4
 		sb $0, 0($t1)
 		b endToMorse
