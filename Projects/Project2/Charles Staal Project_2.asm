@@ -187,17 +187,12 @@ morseLookup:
 	# v0 = address of morse string
 	# v1 = 1 if found, otherwise 0
 	# t0 = address of base array
-	
-	la $t0, MorseCode				# Load address of MorseCode array
+	la $t2, MorseCode
 	blt $a0, 33, notfound			# Make sure the char is in range
 	bgt $a0, 90, notfound
-	
 	sub $a0, $a0, 33				# subtract 33 so now we are indexed in to the MorseCode array
-	add $a0, $a0, $a0
-	add $a0, $a0, $a0				# Last two instructions is to multiply by 4 to word-align
-
-	add $v0, $a0, $t0				# add offset + base address
-	move $v0, $a0					# move address in to return value
+	sll $a0, $a0, 2
+	la $v0, MorseCode($a0)
 	li $v1, 1						# toggle showing that we have it
 	jr $ra
 	
@@ -327,6 +322,7 @@ fromMorse:
 
 .data
 #word aligned array consisting of addresses
+.align 2
 MorseCode: .word MorseExclamation, MorseDblQoute, MorseHashtag, Morse$, MorsePercent, MorseAmp, MorseSglQoute, MorseOParen, MorseCParen, MorseStar, MorsePlus, MorseComma, MorseDash, MorsePeriod, MorseFSlash, Morse0, Morse1,  Morse2, Morse3, Morse4, Morse5, Morse6, Morse7, Morse8, Morse9, MorseColon, MorseSemiColon, MorseLT, MorseEQ, MorseGT, MorseQuestion, MorseAt, MorseA, MorseB, MorseC, MorseD, MorseE, MorseF, MorseG, MorseH, MorseI, MorseJ, MorseK, MorseL, MorseM, MorseN, MorseO, MorseP, MorseQ, MorseR, MorseS, MorseT, MorseU, MorseV, MorseW, MorseX, MorseY, MorseZ 
 
 MorseExclamation: .asciiz "-.-.--"
