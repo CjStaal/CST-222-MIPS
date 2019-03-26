@@ -158,15 +158,16 @@ ammendString:
 	# t2 = offset of a0
 	# t3 = offset of a1
 	# t4 = byte to be added to a0
+	# t5 = a3 - 1. for a0 index 
 	# v0 = address of a0
-	# v1 = new a3
-	move $t2, $a2							#
+	# v1 = new a3, or -1 if filled and wasn't able to finish 
+	move $t2, $a2						#
 	li $t3, 0							# gotta zero it out so I'm not a dumbass
 	ammendLoop:
 		add $t0, $a0, $t2				# address + offset for a0, destination string
 		add $t1, $a1, $t3				# address + offset for a1, source string
 		lb $t4, 0($t1)					# load the byte from the source string 
-		beq $a2, $a3, stringFull		# if the index of the destination string is the size of the destination string, we are full
+		beq $t2, $a3, stringFull		# if the index of the destination string is the size of the destination string, we are full (since we are really above the index by 1)
 		beq $t4, '\0', finishedAmmend	# if the character we just grabbed from the source string is null, we are done
 		sb $t4, 0($t0)					# store the character from the source string to the destination string
 		addi $t2, $t2, 1				# increment index for destination string
@@ -174,8 +175,9 @@ ammendString:
 		b ammendLoop					# lets keep it movin'
 	
 	stringFull:
+		
 		move $v0, $a0					# move the address of the destination string to v0
-		move $v1, $a3					# Lets let them know where we are full on the destination string via v1
+		li $v1, -1						# Lets let them know where we are full on the destination string via v1
 		jr $ra							# jump wit it
 	
 	finishedAmmend:
@@ -203,7 +205,7 @@ morseLookup:
 		jr $ra
 	notfound:							#
 		li $v0, 0						#
-		li $v0, 0						#
+		li $v1, 0						#
 		jr $ra							#
 
 toMorse:
@@ -237,17 +239,17 @@ toMorse:
 	
 	blt $a2, 1, invalidEntry			#
 	
-	li $v1, 1							#
+	li $s6, 1							#
 	li $s3, 0							#
 	li $s4, 0							#
 	toMorseLoop:						#
 		beq $s4, $s2, filled			#
 		add $t0, $s0, $s3				#
 		lb $s5, 0($t0)					# character from source string to be encoded
-		beq $s5, '\0', finished			#
+		beq $s5, '\0', finishedCorrectly#
 		move $a0, $s5					# move that character in to argument 0
 		jal morseLookup					# returns address of the morse string in to v0 for character in s0
-		beq $v1, 0, skip				# if it returned 0 in v1, that means there is no morse for that character, so skip it
+		beq $v1, 0, Incomplete			# if it returned 0 in v1, that means there is no morse for that character, so skip it
 		move $a1, $v0					# address of morse string
 		move $a0, $s1					# address of destination string
 		move $a2, $s4					# index of s1 (where to start ammending)
@@ -255,58 +257,64 @@ toMorse:
 		jal ammendString				# v0 = address of ammended string, v1 = new s4
 		move $s1, $v0					# move return address in to s1
 		move $s4, $v1					# move new s1 offset back in
+		beq $s4, -1, unfinished
 		bne $s5, ' ', addX
 		returnFromAddX:
 		beq $s2, $s4, filled
 		skip:							#
 		addi $s3, $s3, 1				# increment the offset/index for the source string
 		b toMorseLoop					#
-		
 
-	finished:
-		add $t1, $a1, $s4
-		sb $0, 0($t1)
-		b finishedCorrectly
-	
+	Incomplete: 
+		li $s6, 0
+		b skip
+		
 	addX:
 		la $a1, EndChar
 		add $t0, $s0, $s3
 		addi $t0, $t0, 1
 		lb $t5, 0($t0)
 		beq $t5, ' ', returnFromAddX
-		beq $t5, '\0', finished
+		beq $t5, '\0', finishedCorrectly
 		move $a0, $s1
 		move $a2, $s4
 		move $a3, $s2
 		jal ammendString
 		move $s1, $v0					# move return address in to s1
 		move $s4, $v1					# move new s1 offset back in
+		beq $s4, -1, unfinished
 		b returnFromAddX
 		
-	filled:								#
-		add $t0, $a0, $s3				#
-		add $t1, $a1, $s4				#
-		lb $t4, 0($t0)					#
-		beq $t4, '\0', finishedCorrectly#
-		li $v1, 0						#
-		finishedCorrectly:				#
-		sb $0, 0($t1)					#
-		li $v1, 1
-		move $a0, $s1					#
-		move $a1, $0					#
-		jal length2Char					#
-
-		b endToMorse					#
-	
 	invalidEntry:						#
 		li $v0, 0						#
-		li $v0, 0						#
-		b endToMorse					#
+		li $v1, 0						#
+		move $ra, $s7					#
+		jr $ra							#
 		
 	unfinished:							#
-		li $v1, 0						#
+		li $s6, 0
+		sub $s2, $s2, 1
+		add $t1, $s1, $s2
+		sb $0, 0($t1)
+		b endToMorse		
 
+	finishedCorrectly:
+		add $t1, $a1, $s4
+		sb $0, 0($t1)
+		b endToMorse
+		
+	filled:								#
+		add $t0, $s0, $s3				#
+		lb $t4, 0($t0)					#
+		beq $t4, '\0', finishedCorrectly#
+		b endToMorse					#
+		
 	endToMorse:							#
+		move $a0, $s1
+		move $a1, $0
+		jal length2Char
+		add $v0, $v0, 1					# because he wants the length INCLUDING the null? wtf?
+		move $v1, $s6
 		move $ra, $s7					#
 		jr $ra							#
 
