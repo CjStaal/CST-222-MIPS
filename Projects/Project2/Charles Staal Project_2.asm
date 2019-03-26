@@ -160,7 +160,8 @@ ammendString:
 	# t4 = byte to be added to a0
 	# v0 = address of a0
 	# v1 = new a3
-	
+	li $t2, 0							# gotta zero it out so I'm not a dumbass
+	li $t3, 0							# i repeat
 	ammendLoop:
 		add $t0, $a0, $t2				# address + offset for a0, destination string
 		add $t1, $a1, $t3				# address + offset for a1, source string
@@ -243,8 +244,8 @@ toMorse:
 		move $a0, $s5					# move that character in to argument 0
 		jal morseLookup					# returns address of the morse string in to v0 for character in s0
 		beq $v1, 0, skip				# if it returned 0 in v1, that means there is no morse for that character, so skip it
-		move $a0, $s1					# address of destination string
 		move $a1, $v0					# address of morse string
+		move $a0, $s1					# address of destination string
 		move $a2, $s4					# index of s1 (where to start ammending)
 		move $a3, $s2					# destination string size
 		jal ammendString				# v0 = address of ammended string, v1 = new s4
@@ -318,8 +319,6 @@ fromMorse:
 	jr $ra
 
 .data
-#word aligned array consisting of addresses
-.
 MorseCode: .word MorseExclamation, MorseDblQoute, MorseHashtag, Morse$, MorsePercent, MorseAmp, MorseSglQoute, MorseOParen, MorseCParen, MorseStar, MorsePlus, MorseComma, MorseDash, MorsePeriod, MorseFSlash, Morse0, Morse1,  Morse2, Morse3, Morse4, Morse5, Morse6, Morse7, Morse8, Morse9, MorseColon, MorseSemiColon, MorseLT, MorseEQ, MorseGT, MorseQuestion, MorseAt, MorseA, MorseB, MorseC, MorseD, MorseE, MorseF, MorseG, MorseH, MorseI, MorseJ, MorseK, MorseL, MorseM, MorseN, MorseO, MorseP, MorseQ, MorseR, MorseS, MorseT, MorseU, MorseV, MorseW, MorseX, MorseY, MorseZ 
 
 MorseExclamation: .asciiz "-.-.--"
