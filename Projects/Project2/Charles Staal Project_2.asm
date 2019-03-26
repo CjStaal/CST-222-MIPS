@@ -45,6 +45,7 @@ length2Char:
 	loopLength2Char:					#
 		lb $t0, 0($a0)					# load char
 		beq $t0, $t2, doneLength2Char	# if char = terminator
+		beq $t0, $0, doneLength2Char	# or if we reach the EOS
 		addi $v0, $v0, 1				# increase counter
 		addi $a0, $a0, 1				# go to next byte
 		b loopLength2Char				#
