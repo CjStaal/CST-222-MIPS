@@ -192,7 +192,7 @@ morseLookup:
 	bgt $a0, 90, notfound
 	sub $a0, $a0, 33				# subtract 33 so now we are indexed in to the MorseCode array
 	sll $a0, $a0, 2
-	la $v0, MorseCode($a0)
+	lw $v0, MorseCode($a0)
 	li $v1, 1						# toggle showing that we have it
 	jr $ra
 	
@@ -322,6 +322,7 @@ fromMorse:
 
 .data
 #word aligned array consisting of addresses
+.
 MorseCode: .word MorseExclamation, MorseDblQoute, MorseHashtag, Morse$, MorsePercent, MorseAmp, MorseSglQoute, MorseOParen, MorseCParen, MorseStar, MorsePlus, MorseComma, MorseDash, MorsePeriod, MorseFSlash, Morse0, Morse1,  Morse2, Morse3, Morse4, Morse5, Morse6, Morse7, Morse8, Morse9, MorseColon, MorseSemiColon, MorseLT, MorseEQ, MorseGT, MorseQuestion, MorseAt, MorseA, MorseB, MorseC, MorseD, MorseE, MorseF, MorseG, MorseH, MorseI, MorseJ, MorseK, MorseL, MorseM, MorseN, MorseO, MorseP, MorseQ, MorseR, MorseS, MorseT, MorseU, MorseV, MorseW, MorseX, MorseY, MorseZ 
 
 MorseExclamation: .asciiz "-.-.--"
