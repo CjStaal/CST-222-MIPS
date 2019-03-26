@@ -163,6 +163,7 @@ ammendString:
 	# v1 = new a3, or -1 if filled and wasn't able to finish 
 	move $t2, $a2						#
 	li $t3, 0							# gotta zero it out so I'm not a dumbass
+	
 	ammendLoop:
 		add $t0, $a0, $t2				# address + offset for a0, destination string
 		add $t1, $a1, $t3				# address + offset for a1, source string
@@ -175,7 +176,6 @@ ammendString:
 		b ammendLoop					# lets keep it movin'
 	
 	stringFull:
-		
 		move $v0, $a0					# move the address of the destination string to v0
 		li $v1, -1						# Lets let them know where we are full on the destination string via v1
 		jr $ra							# jump wit it
@@ -199,10 +199,12 @@ morseLookup:
 	lw $v0, MorseCode($a0)				#
 	li $v1, 1							# toggle showing that we have it
 	jr $ra								#
+	
 	isaspace:
 		la $v0, Space
 		li $v1, 1
 		jr $ra
+		
 	notfound:							#
 		li $v0, 0						#
 		li $v1, 0						#
@@ -219,6 +221,7 @@ toMorse:
 	# s3 = offset of s0
 	# s4 = offset of s1
 	# s5 = character to be encoded
+	# s6 = flag if any type of error
 	# s7 = return address
 	
 	# t0 = offset + base address of a0
@@ -242,6 +245,7 @@ toMorse:
 	li $s6, 1							#
 	li $s3, 0							#
 	li $s4, 0							#
+	
 	toMorseLoop:						#
 		beq $s4, $s2, filled			#
 		add $t0, $s0, $s3				#
@@ -265,10 +269,6 @@ toMorse:
 		addi $s3, $s3, 1				# increment the offset/index for the source string
 		b toMorseLoop					#
 
-	Incomplete: 
-		li $s6, 0
-		b skip
-		
 	addX:
 		la $a1, EndChar
 		add $t0, $s0, $s3
@@ -284,6 +284,10 @@ toMorse:
 		move $s4, $v1					# move new s1 offset back in
 		beq $s4, -1, unfinished
 		b returnFromAddX
+		
+	Incomplete: 
+		li $s6, 0
+		b skip
 		
 	invalidEntry:						#
 		li $v0, 0						#
