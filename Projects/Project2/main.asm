@@ -29,6 +29,20 @@ toMorse_mcmsg: .space 30
 .align 2
 toMorse_size: .word 30
 
+# toMorse2
+toMorse_header2: .asciiz "\n\n********* toMorse *********\n"
+toMorse_plaintext2: .asciiz "M I P S ! !"
+toMorse_mcmsg2: .space 64
+.align 2
+toMorse_size2: .word 64
+
+#toMorse3
+toMorse_header3: .asciiz "\n\n********* toMorse *********\n"
+toMorse_plaintext3: .asciiz "M IP S ! ! "
+toMorse_mcmsg3: .space 64
+.align 2
+toMorse_size3: .word 64
+
 # createKey
 createKey_header: .asciiz "\n\n********* createKey *********\n"
 createKey_phrase: .asciiz "Computer Science is fun."
@@ -203,6 +217,76 @@ main:
 
 	print_string(str_result)
 	print_string(toMorse_mcmsg)
+	print_newline
+
+	print_string(str_return)
+	print_int($t0)
+	print_newline
+
+	print_string(str_return)
+	print_int($t1)
+	print_newline
+	
+	############################################
+	# TEST CASE for toMorse2
+	############################################
+	print_string(toMorse_header2)
+	print_string(str_input)
+	print_string(toMorse_plaintext2)
+	print_newline
+	print_string(str_input)
+	print_string(toMorse_mcmsg2)
+	print_newline
+	print_string(str_input)
+	lw $t9, toMorse_size2
+	print_int($t9)
+	print_newline
+
+	la $a0, toMorse_plaintext2
+	la $a1, toMorse_mcmsg2
+	lw $a2, toMorse_size2
+	jal toMorse
+
+	move $t0, $v0
+	move $t1, $v1
+
+	print_string(str_result)
+	print_string(toMorse_mcmsg2)
+	print_newline
+
+	print_string(str_return)
+	print_int($t0)
+	print_newline
+
+	print_string(str_return)
+	print_int($t1)
+	print_newline
+	
+	############################################
+	# TEST CASE for toMorse
+	############################################
+	print_string(toMorse_header3)
+	print_string(str_input)
+	print_string(toMorse_plaintext3)
+	print_newline
+	print_string(str_input)
+	print_string(toMorse_mcmsg3)
+	print_newline
+	print_string(str_input)
+	lw $t9, toMorse_size3
+	print_int($t9)
+	print_newline
+
+	la $a0, toMorse_plaintext3
+	la $a1, toMorse_mcmsg3
+	lw $a2, toMorse_size3
+	jal toMorse
+
+	move $t0, $v0
+	move $t1, $v1
+
+	print_string(str_result)
+	print_string(toMorse_mcmsg3)
 	print_newline
 
 	print_string(str_return)
