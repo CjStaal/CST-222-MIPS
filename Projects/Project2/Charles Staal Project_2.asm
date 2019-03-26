@@ -18,7 +18,7 @@ toUpper:
 	
 	li $t0, 0							# intialize byte counter to zero
 	
-	loopToUpper:
+	loopToUpper:						#
 		add $t2, $a0, $t0				# add base address to counter creating offset address
 		lb $t1, 0($t2)					# load byte to be manipulated
 		beq $t1, '\0' doneToUpper		# if a null bit, we are at the end of the string
@@ -39,9 +39,9 @@ length2Char:
 	# a1 = address of specified terminator
 	# t1 = string address
 	# t2 = terminator char
-	li $v0, 0
-	beqz $a1, a1null
-	lb $t2, 0($a1)
+	li $v0, 0							#
+	beqz $a1, a1null					#
+	lb $t2, 0($a1)						#
 	loopLength2Char:					#
 		lb $t0, 0($a0)					# load char
 		beq $t0, $t2, doneLength2Char	# if char = terminator
@@ -50,9 +50,9 @@ length2Char:
 		b loopLength2Char				#
 	doneLength2Char:					#
 	jr $ra								#
-	a1null:
-		li $t2, '\0'
-		b loopLength2Char
+	a1null:								#
+		li $t2, '\0'					#
+		b loopLength2Char				#
 
 strcmp:
 	# s0 = str1
@@ -71,7 +71,7 @@ strcmp:
 	# s7 = preserve length of str1 during jump
 
 	#Save registers
-	move $t7, $ra
+	move $t7, $ra						#
 	
 	move $s0, $a0						# save str1 to s0
 	move $s1, $a1						# save str2 to s1
@@ -79,7 +79,7 @@ strcmp:
 	
 	li $a1, 0							# set null terminator for length2char
 	
-	move $a0, $s0
+	move $a0, $s0						#
 	jal length2Char						# call length2char for str2
 	move $s7, $v0						# move return value to t2
 	
@@ -92,57 +92,57 @@ strcmp:
 	bgt $s2, $t3, error					# if length is greater than length of string2, return 0,0
 	
 	# initialize the things
-	li $t0, 0
-	li $t1, 0
-	li $t4, 0
-	li $v0, 1
-	li $v1, 0
+	li $t0, 0							#
+	li $t1, 0							#
+	li $t4, 0							#
+	li $v0, 1							#
+	li $v1, 0							#
 
 	beqz $a2, a2isZero					# if a2 is zero, find out if strings are equal, if not, find the difference and add that to v1, and set v0 to 0
 	
-	strCmpLoop:
+	strCmpLoop:							#
 		beq $t4, $s2, done				# it is done once we get to the end of the strings
 		add $t0, $s0, $t4				# address + offset for byte to be used from source1
 		add $t1, $s1, $t4				# address + offset for byte to be used from source2
-		lb $s3, 0($t0)
-		lb $s4, 0($t1)
-		bne $s3, $s4, different
-		add $v1, $v1, 1
-		returntoLoop:
-		add $t4, $t4, 1
-		b strCmpLoop
+		lb $s3, 0($t0)					# load up that there byte from string 1
+		lb $s4, 0($t1)					# load up that there byte from string 2
+		bne $s3, $s4, different			# Are they equal? If not lets go down to label different
+		add $v1, $v1, 1					# Seems like they're equal. Lets increment 'same' counter
+		returntoLoop:					#
+		add $t4, $t4, 1					# Lets increment our index
+		b strCmpLoop					#
 		
 		
 	# if one string is larger than the other, add the difference to the amount of different chars and set v0 to 0
-	a2isZero:
-		bne $t2, $t3, strDiffSize
-		move $s2, $t2
-		b strCmpLoop
+	a2isZero:							#
+		bne $t2, $t3, strDiffSize		# if the strings are a different size, branch
+		move $s2, $t2					# else it's the same size, so lets just make the length one of the lengths of the two strings
+		b strCmpLoop					# hop on back now ya'll
 	
 	
-	strDiffSize:
-		li $v0, 0
-		blt $t2, $t3, t2Lt3
-		move $s2, $t3
-		b strCmpLoop
+	strDiffSize:						#
+		li $v0, 0						# Well we know they don't match already there partna'
+		blt $t2, $t3, t2Lt3				# Lets save whichever one is lower in to s2
+		move $s2, $t3					# right now I guess t3 is lower
+		b strCmpLoop					#
 	
-	t2Lt3:
-		move $s2, $t2
-		b strCmpLoop
+	t2Lt3:								#
+		move $s2, $t2					# right now t2 is lower 
+		b strCmpLoop					#
 	
 	
-	error:
-		li $v0, 0
-		li $v1, 0
-		b done
+	error:								#
+		li $v0, 0						#
+		li $v1, 0						#
+		b done							#
 		
-	different:
-		li $v0, 0
-		b returntoLoop
+	different:							#
+		li $v0, 0						# They're different. Sound the alarm in v0
+		b returntoLoop					#
 		
-	done:
-		move $ra, $t7
-		jr $ra
+	done:								#
+		move $ra, $t7					# lets move the address back in to ra
+		jr $ra							# hop on back
 
 ##############################
 # PART 2 FUNCTIONS
@@ -162,44 +162,44 @@ ammendString:
 	# v1 = new a3
 	
 	ammendLoop:
-		add $t0, $a0, $t2
-		add $t1, $a1, $t3
-		lb $t4, 0($t1)
-		beq $a2, $a3, stringFull
-		beq $t4, '\0', finishedAmmend
-		sb $t4, 0($t0)
-		addi $t2, $t2, 1
-		addi $t3, $t3, 1
-		b ammendLoop
+		add $t0, $a0, $t2				# address + offset for a0, destination string
+		add $t1, $a1, $t3				# address + offset for a1, source string
+		lb $t4, 0($t1)					# load the byte from the source string 
+		beq $a2, $a3, stringFull		# if the index of the destination string is the size of the destination string, we are full
+		beq $t4, '\0', finishedAmmend	# if the character we just grabbed from the source string is null, we are done
+		sb $t4, 0($t0)					# store the character from the source string to the destination string
+		addi $t2, $t2, 1				# increment index for destination string
+		addi $t3, $t3, 1				# increment index for source string
+		b ammendLoop					# lets keep it movin'
 	
 	stringFull:
-		move $v0, $a0
-		move $v1, $a3
-		jr $ra
+		move $v0, $a0					# move the address of the destination string to v0
+		move $v1, $a3					# Lets let them know where we are full on the destination string via v1
+		jr $ra							# jump wit it
 	
 	finishedAmmend:
-		move $a0, $a0
-		move $v1, $t3
-		jr $ra
+		move $v0, $a0					# again lets move the address of the destination string to v0
+		move $v1, $t2					# let them know this is where we are on the destination string
+		jr $ra							# jump wit it
 		
 morseLookup:
 	# a0 = character to be looked up
 	# v0 = address of morse string
 	# v1 = 1 if found, otherwise 0
 	# t0 = address of base array
-	la $t2, MorseCode
-	blt $a0, 33, notfound			# Make sure the char is in range
-	bgt $a0, 90, notfound
-	sub $a0, $a0, 33				# subtract 33 so now we are indexed in to the MorseCode array
-	sll $a0, $a0, 2
-	lw $v0, MorseCode($a0)
-	li $v1, 1						# toggle showing that we have it
-	jr $ra
+	la $t2, MorseCode					#
+	blt $a0, 33, notfound				# Make sure the char is in range
+	bgt $a0, 90, notfound				#
+	sub $a0, $a0, 33					# subtract 33 so now we are indexed in to the MorseCode array
+	sll $a0, $a0, 2						#
+	lw $v0, MorseCode($a0)				#
+	li $v1, 1							# toggle showing that we have it
+	jr $ra								#
 	
-	notfound:
-		li $v0, 0
-		li $v0, 0
-		jr $ra
+	notfound:							#
+		li $v0, 0						#
+		li $v0, 0						#
+		jr $ra							#
 
 toMorse:
 	# a0 = address of source string
@@ -223,68 +223,65 @@ toMorse:
 	# v1 = returns 1 if string was completely and correctly encoded, otherwise 0
 	
 	# save registers
-	move $s1, $a1
-	move $s2, $a2
-	move $s7, $ra
-	
-	jal toUpper
+	move $s1, $a1						#
+	move $s2, $a2						#
+	move $s7, $ra						#
+
+	jal toUpper							#
 	move $s0, $v0						# save the uppercased string address
 	
-	blt $a2, 1, invalidEntry
+	blt $a2, 1, invalidEntry			#
 	
-	li $v1, 1
-	li $s3, 0
-	li $s4, 0
-	toMorseLoop:
-		beq $s4, $s2, filled
-		add $t0, $a0, $s3
-		lb $s5, 0($t0)			# character from source string to be encoded
-		beq $s5, '\0', filled
-		move $a0, $s5			# move that character in to argument 0
-		jal morseLookup			# returns address of the morse string in to v0 for character in s0
-		beq $v1, 0, skip		# if it returned 0 in v1, that means there is no morse for that character, so skip it
-		move $a0, $s1			# address of destination string
-		move $a1, $v0			# address of morse string
-		move $a2, $s4			# index of s1 (where to start ammending)
-		move $a3, $s2			# destination string size
-		jal ammendString		# v0 = address of ammended string, v1 = new s4
-		move $s1, $v0			# move return address in to s1
-		move $s4, $v1			# move new s1 index back in
-		beq $s2, $s4, filled	# make sure we are not filled
-		addi $s4, $s4, 1		# increment the offset/index for the destination string
-		skip:
-		addi $s3, $s3, 1		# increment the offset/index for the source string
-		b toMorseLoop
+	li $v1, 1							#
+	li $s3, 0							#
+	li $s4, 0							#
+	toMorseLoop:						#
+		beq $s4, $s2, filled			#
+		add $t0, $a0, $s3				#
+		lb $s5, 0($t0)					# character from source string to be encoded
+		beq $s5, '\0', filled			#
+		move $a0, $s5					# move that character in to argument 0
+		jal morseLookup					# returns address of the morse string in to v0 for character in s0
+		beq $v1, 0, skip				# if it returned 0 in v1, that means there is no morse for that character, so skip it
+		move $a0, $s1					# address of destination string
+		move $a1, $v0					# address of morse string
+		move $a2, $s4					# index of s1 (where to start ammending)
+		move $a3, $s2					# destination string size
+		jal ammendString				# v0 = address of ammended string, v1 = new s4
+		move $s1, $v0					# move return address in to s1
+		move $s4, $v1					# move new s1 index back in
+		beq $s2, $s4, filled			# make sure we are not filled
+		addi $s4, $s4, 1				# increment the offset/index for the destination string
+		skip:							#
+		addi $s3, $s3, 1				# increment the offset/index for the source string
+		b toMorseLoop					#
 		
-	filled:
-		add $t0, $a0, $s3
-		add $t1, $a1, $s4
-		lb $t4, 0($t0)
-		beq $t4, '\0', finishedCorrectly
-		li $v1, 0
-		finishedCorrectly:
-		sb $0, 0($t1)
-		
-		move $a0, $s1
-		move $a1, $t5
-		jal length2Char
-		
-		b endToMorse
+	filled:								#
+		add $t0, $a0, $s3				#
+		add $t1, $a1, $s4				#
+		lb $t4, 0($t0)					#
+		beq $t4, '\0', finishedCorrectly#
+		li $v1, 0						#
+		finishedCorrectly:				#
+		sb $0, 0($t1)					#
+
+		move $a0, $s1					#
+		move $a1, $t5					#
+		jal length2Char					#
+
+		b endToMorse					#
 	
-	invalidEntry:
-		li $v0, 0
-		li $v0, 0
-		b endToMorse
+	invalidEntry:						#
+		li $v0, 0						#
+		li $v0, 0						#
+		b endToMorse					#
 		
-	unfinished:
-		li $v1, 0
+	unfinished:							#
+		li $v1, 0						#
 
-	endToMorse:
-		move $ra, $s7
-		jr $ra
-
-
-
+	endToMorse:							#
+		move $ra, $s7					#
+		jr $ra							#
 
 createKey:
 	#Define your code here
