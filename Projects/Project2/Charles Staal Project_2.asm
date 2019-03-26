@@ -238,7 +238,7 @@ toMorse:
 	li $s4, 0							#
 	toMorseLoop:						#
 		beq $s4, $s2, filled			#
-		add $t0, $a0, $s3				#
+		add $t0, $s0, $s3				#
 		lb $s5, 0($t0)					# character from source string to be encoded
 		beq $s5, '\0', filled			#
 		move $a0, $s5					# move that character in to argument 0
