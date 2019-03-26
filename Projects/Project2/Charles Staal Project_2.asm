@@ -189,6 +189,7 @@ morseLookup:
 	# v1 = 1 if found, otherwise 0
 	# t0 = address of base array
 	la $t2, MorseCode					#
+	beq $a0, 32, isaspace
 	blt $a0, 33, notfound				# Make sure the char is in range
 	bgt $a0, 90, notfound				#
 	sub $a0, $a0, 33					# subtract 33 so now we are indexed in to the MorseCode array
@@ -196,7 +197,10 @@ morseLookup:
 	lw $v0, MorseCode($a0)				#
 	li $v1, 1							# toggle showing that we have it
 	jr $ra								#
-	
+	isaspace:
+		la $v0, Space
+		li $v1, 1
+		jr $ra
 	notfound:							#
 		li $v0, 0						#
 		li $v0, 0						#
@@ -250,23 +254,35 @@ toMorse:
 		move $a3, $s2					# destination string size
 		jal ammendString				# v0 = address of ammended string, v1 = new s4
 		move $s1, $v0					# move return address in to s1
-		move $s4, $v1					# move new s1 index back in
-		beq $s2, $s4, filled			# make sure we are not filled
-		add $t1, $s1, $s4
-		li $t5, 'X'
-		sb $t5, 0($t1)
-		addi $s4, $s4, 1
+		move $s4, $v1					# move new s1 offset back in
+		bne $s5, ' ', addX
+		returnFromAddX:
 		beq $s2, $s4, filled
 		skip:							#
 		addi $s3, $s3, 1				# increment the offset/index for the source string
 		b toMorseLoop					#
 		
+
 	finished:
 		add $t1, $a1, $s4
-		bge $s4, $s2, fixit
+		sb $0, 0($t1)
 		b finishedCorrectly
-	fixit:
 	
+	addX:
+		la $a1, EndChar
+		add $t0, $s0, $s3
+		addi $t0, $t0, 1
+		lb $t5, 0($t0)
+		beq $t5, ' ', returnFromAddX
+		beq $t5, '\0', finished
+		move $a0, $s1
+		move $a2, $s4
+		move $a3, $s2
+		jal ammendString
+		move $s1, $v0					# move return address in to s1
+		move $s4, $v1					# move new s1 offset back in
+		b returnFromAddX
+		
 	filled:								#
 		add $t0, $a0, $s3				#
 		add $t1, $a1, $s4				#
@@ -275,7 +291,7 @@ toMorse:
 		li $v1, 0						#
 		finishedCorrectly:				#
 		sb $0, 0($t1)					#
-
+		li $v1, 1
 		move $a0, $s1					#
 		move $a1, $0					#
 		jal length2Char					#
@@ -331,6 +347,8 @@ fromMorse:
 .data
 MorseCode: .word MorseExclamation, MorseDblQoute, MorseHashtag, Morse$, MorsePercent, MorseAmp, MorseSglQoute, MorseOParen, MorseCParen, MorseStar, MorsePlus, MorseComma, MorseDash, MorsePeriod, MorseFSlash, Morse0, Morse1,  Morse2, Morse3, Morse4, Morse5, Morse6, Morse7, Morse8, Morse9, MorseColon, MorseSemiColon, MorseLT, MorseEQ, MorseGT, MorseQuestion, MorseAt, MorseA, MorseB, MorseC, MorseD, MorseE, MorseF, MorseG, MorseH, MorseI, MorseJ, MorseK, MorseL, MorseM, MorseN, MorseO, MorseP, MorseQ, MorseR, MorseS, MorseT, MorseU, MorseV, MorseW, MorseX, MorseY, MorseZ 
 
+Space: .asciiz "XX"
+EndChar: .asciiz "X"
 MorseExclamation: .asciiz "-.-.--"
 MorseDblQoute: .asciiz ".-..-."
 MorseHashtag: .ascii ""
