@@ -335,6 +335,37 @@ createKey:
 	#Define your code here
 	# a0 = Starting address of phrase
 	# a1 = starting address of 26 bytes of memory for output phrase
+	
+	# s0 = address of phrase
+	# s1 = address of output
+	# s2 = size of phrase
+	# v0 = index
+	# v1 = character from phrase
+	# v2 = character - 41
+	# s7 = return address
+	# v0 = address of CheckArray
+	move $s0, $a0
+	move $s1, $a1
+	move $s7, $ra
+	li $v1, $0
+	jal length2Char
+	move $s2, $v0
+	la $v0, CheckArray
+	createKeyLoop:
+		bge $v0, $s2, fillTheRest				# if the index is larger or equal to the size of the phrase, go back and fill the rest of the letters in
+		lb $s4, 0($s0)							# obtain the character from the phrase
+		subi $s5, $s4, 41						# minus 41 from character to get index of the character in CheckArray
+												# Load the characters boolean byte from CheckArray
+		beqz $s6, addToOutput					# if the characters boolean is 0, add it to output
+		addi $s3, $s3, 1						# else increment the index/counter
+		addi $s0, $s0, 1						# increment the address of the phrase
+		b createKeyLoop
+		
+	addToOutput:
+		sb $s4, 0($s1)
+		addi $s1, $s1, 1
+		li $s6, 1
+		sb $s6, 0($s1)
 	jr $ra
 
 keyIndex:
@@ -367,7 +398,7 @@ fromMorse:
 
 .data
 MorseCode: .word MorseExclamation, MorseDblQoute, MorseHashtag, Morse$, MorsePercent, MorseAmp, MorseSglQoute, MorseOParen, MorseCParen, MorseStar, MorsePlus, MorseComma, MorseDash, MorsePeriod, MorseFSlash, Morse0, Morse1,  Morse2, Morse3, Morse4, Morse5, Morse6, Morse7, Morse8, Morse9, MorseColon, MorseSemiColon, MorseLT, MorseEQ, MorseGT, MorseQuestion, MorseAt, MorseA, MorseB, MorseC, MorseD, MorseE, MorseF, MorseG, MorseH, MorseI, MorseJ, MorseK, MorseL, MorseM, MorseN, MorseO, MorseP, MorseQ, MorseR, MorseS, MorseT, MorseU, MorseV, MorseW, MorseX, MorseY, MorseZ 
-
+CheckArray: .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 Space: .asciiz "XX"
 EndChar: .asciiz "X"
 MorseExclamation: .asciiz "-.-.--"
