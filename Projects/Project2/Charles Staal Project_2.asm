@@ -160,8 +160,8 @@ ammendString:
 	# t4 = byte to be added to a0
 	# v0 = address of a0
 	# v1 = new a3
-	li $t2, 0							# gotta zero it out so I'm not a dumbass
-	li $t3, 0							# i repeat
+	move $t2, $a2							#
+	li $t3, 0							# gotta zero it out so I'm not a dumbass
 	ammendLoop:
 		add $t0, $a0, $t2				# address + offset for a0, destination string
 		add $t1, $a1, $t3				# address + offset for a1, source string
@@ -240,7 +240,7 @@ toMorse:
 		beq $s4, $s2, filled			#
 		add $t0, $s0, $s3				#
 		lb $s5, 0($t0)					# character from source string to be encoded
-		beq $s5, '\0', filled			#
+		beq $s5, '\0', finished			#
 		move $a0, $s5					# move that character in to argument 0
 		jal morseLookup					# returns address of the morse string in to v0 for character in s0
 		beq $v1, 0, skip				# if it returned 0 in v1, that means there is no morse for that character, so skip it
@@ -252,11 +252,21 @@ toMorse:
 		move $s1, $v0					# move return address in to s1
 		move $s4, $v1					# move new s1 index back in
 		beq $s2, $s4, filled			# make sure we are not filled
-		addi $s4, $s4, 1				# increment the offset/index for the destination string
+		add $t1, $s1, $s4
+		li $t5, 'X'
+		sb $t5, 0($t1)
+		addi $s4, $s4, 1
+		beq $s2, $s4, filled
 		skip:							#
 		addi $s3, $s3, 1				# increment the offset/index for the source string
 		b toMorseLoop					#
 		
+	finished:
+		add $t1, $a1, $s4
+		bge $s4, $s2, fixit
+		b finishedCorrectly
+	fixit:
+	
 	filled:								#
 		add $t0, $a0, $s3				#
 		add $t1, $a1, $s4				#
@@ -267,7 +277,7 @@ toMorse:
 		sb $0, 0($t1)					#
 
 		move $a0, $s1					#
-		move $a1, $t5					#
+		move $a1, $0					#
 		jal length2Char					#
 
 		b endToMorse					#
