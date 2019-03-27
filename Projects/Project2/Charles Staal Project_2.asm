@@ -212,6 +212,20 @@ morseLookup:
 		li $v1, 0						#
 		jr $ra							#
 
+zeroCheckArray:
+	la $t0, CheckArray
+	li $t1, 0
+	li $t2, 0
+	zeroLoop:
+		beq $t1, 26, zeroed
+		add $t3, $t0, $t1
+		sb $t2, 0($t3)
+		addi $t1, $t1, 1
+		b zeroLoop
+		
+	zeroed:
+	jr $ra
+
 toMorse:
 	# a0 = address of source string
 	# a1 = address of destination string
@@ -335,19 +349,6 @@ toMorse:
 		move $ra, $s7					#
 		jr $ra							#
 
-zeroCheckArray:
-	la $t0, CheckArray
-	li $t1, 0
-	li $t2, 0
-	zeroLoop:
-		beq $t1, 26, zeroed
-		add $t3, $t0, $t1
-		sb $t2, 0($t3)
-		addi $t1, $t1, 1
-		b zeroLoop
-		
-	zeroed:
-	jr $ra
 	
 createKey:
 	#Define your code here
@@ -373,7 +374,6 @@ createKey:
 	move $s1, $a1
 	move $s7, $ra
 	jal zeroCheckArray
-	nop
 	jal length2Char
 	move $s2, $v0
 	move $a0, $s0
