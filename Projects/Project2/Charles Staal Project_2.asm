@@ -388,7 +388,7 @@ createKey:
 	createKeyLoop:
 		add $s3, $s0, $t0				# base address + offset/index for phrase
 		add $t5, $s1, $t7				# base address + offset/index for output
-		bge $t0, $s2, fillit			# if the index is larger or equal to the size of the phrase, go back and fill the rest of the letters in
+		beq $t0, $s2, fillit			# if the index is larger or equal to the size of the phrase, go back and fill the rest of the letters in
 		lb $t1, 0($s3)					# obtain the character from the phrase
 		blt $t1, 41, returnToKeyLoop
 		bgt $t1, 90, returnToKeyLoop
