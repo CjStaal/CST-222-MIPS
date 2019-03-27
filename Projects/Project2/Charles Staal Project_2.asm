@@ -42,6 +42,7 @@ length2Char:
 	li $v0, 0							#
 	beqz $a1, a1null					#
 	lb $t2, 0($a1)						#
+	
 	loopLength2Char:					#
 		lb $t0, 0($a0)					# load char
 		beq $t0, $t2, doneLength2Char	# if char = terminator
@@ -149,6 +150,7 @@ strcmp:
 ##############################
 # PART 2 FUNCTIONS
 ##############################
+
 ammendString:
 	# a0 = address of string to be ammended
 	# a1 = offset address of string to be added
