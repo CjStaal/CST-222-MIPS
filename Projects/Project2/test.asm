@@ -23,36 +23,41 @@ strcmp_str1: .asciiz "Hi Cse220!"
 strcmp_str2: .asciiz "Hi Cse220!"
 strcmp_str3: .asciiz "Hi Cse220! Isn't MIPS fun"
 
-# toMorse
+# toMorse1
 toMorse_plaintext1: .asciiz "ABC"
+toMorse_plaintext2: .asciiz "ABCdE"
+toMorse_plaintext3: .asciiz "ABCdE"
+toMorse_plaintext4: .asciiz ""
+toMorse_plaintext5: .asciiz "ABC"
 toMorse_mcmsg1: .space 24
+toMorse_mcmsg2: .space 24
+toMorse_mcmsg3: .space 24
+toMorse_mcmsg4: .space 24
+toMorse_mcmsg5: .space 4
 .align 2
 toMorse_size1: .word 24
-
-# toMorse
-toMorse_plaintext2: .asciiz "ABCdE"
-toMorse_mcmsg2: .space 24
 .align 2
 toMorse_size2: .word 24
-
-# toMorse
-toMorse_plaintext3: .asciiz "ABCdE"
-toMorse_mcmsg3: .space 24
 .align 2
 toMorse_size3: .word -10
-
-# toMorse
-toMorse_plaintext4: .asciiz ""
-toMorse_mcmsg4: .space 24
 .align 2
 toMorse_size4: .word 24
-
-# toMorse
-toMorse_plaintext5: .asciiz "ABC"
-toMorse_mcmsg5: .space 4
 .align 2
 toMorse_size5: .word 4
 
+# createKey
+createKey_phrase1: .asciiz "computer science is fun"
+createKey_phrase2: .asciiz "Computer_Science!Is^Fun!!!"
+createKey_phrase3: .asciiz ""
+createKey_phrase4: .asciiz "Computer Science Is Fun"
+createKey_key1: .space 26
+			   .byte 0
+createKey_key2: .space 26
+			   .byte 0
+createKey_key3: .space 26
+			   .byte 0
+createKey_key4: .space 26
+			   .byte 0
 
 # Constants
 .eqv QUIT 10
@@ -690,6 +695,85 @@ main:
 	print_newline
 	print_newline
 
+	############################################
+	# TEST CASE 1 for createKey
+	############################################
+	print_ready_string("=== TESTING createKey Test Case 1: Basic string ===\n")
+	print_string(str_input)
+	print_string(createKey_phrase1)
+	print_newline
+	print_string(str_input)
+	print_string(createKey_key1)
+	print_newline
+
+	la $a0, createKey_phrase1
+	la $a1, createKey_key1
+	jal createKey
+
+	print_string(str_result)
+	print_string(createKey_key1)
+	print_newline
+	print_newline
+	
+	############################################
+	# TEST CASE 2 for createKey
+	############################################
+	print_ready_string("=== TESTING createKey Test Case 2: Basic string with symbols ===\n")
+	print_string(str_input)
+	print_string(createKey_phrase2)
+	print_newline
+	print_string(str_input)
+	print_string(createKey_key2)
+	print_newline
+
+	la $a0, createKey_phrase2
+	la $a1, createKey_key2
+	jal createKey
+
+	print_string(str_result)
+	print_string(createKey_key2)
+	print_newline
+	print_newline
+	
+	############################################
+	# TEST CASE 3 for createKey
+	############################################
+	print_ready_string("=== TESTING createKey Test Case 3: NULL string ===\n")
+	print_string(str_input)
+	print_string(createKey_phrase3)
+	print_newline
+	print_string(str_input)
+	print_string(createKey_key3)
+	print_newline
+
+	la $a0, createKey_phrase3
+	la $a1, createKey_key3
+	jal createKey
+
+	print_string(str_result)
+	print_string(createKey_key3)
+	print_newline
+	print_newline
+	
+	############################################
+	# TEST CASE 4 for createKey
+	############################################
+	print_ready_string("=== TESTING createKey Test Case 4: Mixed upper and lower case ===\n")
+	print_string(str_input)
+	print_string(createKey_phrase4)
+	print_newline
+	print_string(str_input)
+	print_string(createKey_key4)
+	print_newline
+
+	la $a0, createKey_phrase4
+	la $a1, createKey_key4
+	jal createKey
+
+	print_string(str_result)
+	print_string(createKey_key4)
+	print_newline
+	print_newline
 	
 	exit_program
 	

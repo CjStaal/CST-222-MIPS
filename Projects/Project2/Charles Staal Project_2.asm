@@ -335,6 +335,20 @@ toMorse:
 		move $ra, $s7					#
 		jr $ra							#
 
+zeroCheckArray:
+	la $t0, CheckArray
+	li $t1, 0
+	li $t2, 0
+	zeroLoop:
+		beq $t1, 26, zeroed
+		add $t3, $t0, $t1
+		sb $t2, 0($t3)
+		addi $t1, $t1, 1
+		b zeroLoop
+		
+	zeroed:
+	jr $ra
+	
 createKey:
 	#Define your code here
 	# a0 = Starting address of phrase
@@ -343,29 +357,42 @@ createKey:
 	# s0 = address of phrase
 	# s1 = address of output
 	# s2 = size of phrase
-	# t0 = index
+	# s3 = address + index for phrase
+	# t0 = index for phrase
 	# t1 = character from phrase
 	# t2 = character - 41
 	# t3 = CheckArray Address
 	# t4 = char from CheckArray
-	# t5 = address + offset/index phrase
+	# t5 = address + offset/index output phrase
 	# t6 = address + offset ( t2) checkArray
+	# t7 = index for output
 	# s7 = return address
 	# v0 = address of CheckArray
 	# v1 = char from CheckArray
 	move $s0, $a0
 	move $s1, $a1
 	move $s7, $ra
-	li $t0, 0
+	jal zeroCheckArray
+	nop
 	jal length2Char
 	move $s2, $v0
+	move $a0, $s0
+	jal toUpper
+	move $s0, $v0
+	li $t0, 0
+	
 	la $t3, CheckArray
 	li $t5, 0
+	li $t6, 0
+	li $t7, 0
 	createKeyLoop:
-		add $t5, $a0, $t0				# base address + offset/index
-		bge $t0, $s2, fillit					# if the index is larger or equal to the size of the phrase, go back and fill the rest of the letters in
-		lb $t1, 0($t5)					# obtain the character from the phrase
-		subi $t2, $t1, 41				# minus 41 from character to get index of the character in CheckArray
+		add $s3, $s0, $t0				# base address + offset/index for phrase
+		add $t5, $s1, $t7				# base address + offset/index for output
+		bge $t0, $s2, fillit			# if the index is larger or equal to the size of the phrase, go back and fill the rest of the letters in
+		lb $t1, 0($s3)					# obtain the character from the phrase
+		blt $t1, 41, returnToKeyLoop
+		bgt $t1, 90, returnToKeyLoop
+		subi $t2, $t1, 65				# minus 65 from character to get index of the character in CheckArray
 		add $t6, $t3, $t2				# Index for char in CheckArray
 		lb $t4, 0($t6)					# Load the characters boolean byte from CheckArray
 		beqz $t4, addToOutput			# if the characters boolean is 0, add it to output
@@ -374,32 +401,34 @@ createKey:
 		b createKeyLoop
 		
 	addToOutput:
-		sb $t1, 0($s1)					# Add char from phrase to the output phrase
-		addi $t0, $t0, 1				# increment  phrase index/counter
+		sb $t1, 0($t5)					# Add char from phrase to the output phrase
 		li $t4, 1						# load 1 to char from check array
 		sb $t4, 0($t6)					# add 1 to check array
+		addi $t7, $t7, 1 				# increment the output index
 		b returnToKeyLoop
 		
 	addToOutput2:
-		sb $t1, 0($s1)					# Add char from phrase to the output phrase
-		addi $t0, $t0, 1				# increment  phrase index/counter
+		sb $t1, 0($t5)					# Add char to the output phrase
 		li $t4, 1						# load 1 to char from check array
 		sb $t4, 0($t6)					# add 1 to check array
-		b returntoFillitLoop
+		addi $t7, $t7, 1 				# increment the output 
+		b fillitLoop
 		
 	fillit:
-		li $t1, 41
+		li $t1, 41						# Load A in to character register
 		fillitLoop:
-		beq $t1, 91, createKeyDone
-		subi $t2, $t1, 41				# minus 41 from character to get index of the character in CheckArray
+		add $t5, $s1, $t7				# base address + offset/index for output
+		beq $t1, 91, createKeyDone		# If we are passed Z, we are done
+		subi $t2, $t1, 65				# minus 65 from character to get index of the character in CheckArray
 		add $t6, $t3, $t2				# Index for char in CheckArray
 		lb $t4, 0($t6)					# Load the characters boolean byte from CheckArray
 		beqz $t4, addToOutput2			# if the characters boolean is 0, add it to output
-		returntoFillitLoop:
-		addi $t1, $t1, 1				# else increment the index/counter
+		addi $t1, $t1, 1
 		b fillitLoop
 			
 	createKeyDone:
+		li $t1, '\0'
+		sb $t1, 0($t5)
 		move $ra, $s7
 		jr $ra
 
