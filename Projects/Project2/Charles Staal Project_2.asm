@@ -337,28 +337,33 @@ createKey:
 	# a1 = starting address of 26 bytes of memory for output phrase
 	
 	# s0 = address of phrase
+	# t5 = address + offset/index
 	# s1 = address of output
 	# s2 = size of phrase
-	# v0 = index
-	# v1 = character from phrase
-	# v2 = character - 41
+	# t0 = index
+	# t1 = character from phrase
+	# t2 = character - 41
+	# t3 = CheckArray Address
+	# t4 = char from CheckArray
 	# s7 = return address
 	# v0 = address of CheckArray
+	# v1 = char from CheckArray
 	move $s0, $a0
 	move $s1, $a1
 	move $s7, $ra
 	li $v1, $0
 	jal length2Char
 	move $s2, $v0
-	la $v0, CheckArray
+	la $t3, CheckArray
+	li $t5, 0
 	createKeyLoop:
-		bge $v0, $s2, fillTheRest				# if the index is larger or equal to the size of the phrase, go back and fill the rest of the letters in
-		lb $s4, 0($s0)							# obtain the character from the phrase
-		subi $s5, $s4, 41						# minus 41 from character to get index of the character in CheckArray
-												# Load the characters boolean byte from CheckArray
-		beqz $s6, addToOutput					# if the characters boolean is 0, add it to output
-		addi $s3, $s3, 1						# else increment the index/counter
-		addi $s0, $s0, 1						# increment the address of the phrase
+		add $t5, $a0, $t0				# base address + offset/index
+		bge $t0, $s2, fillit					# if the index is larger or equal to the size of the phrase, go back and fill the rest of the letters in
+		lb $t1, 0($t5)					# obtain the character from the phrase
+		subi $t2, $t1, 41				# minus 41 from character to get index of the character in CheckArray
+		lb $t4, 0($t3)					# Load the characters boolean byte from CheckArray
+		beqz $t4, addToOutput			# if the characters boolean is 0, add it to output
+		addi $t0, $t0, 1				# else increment the index/counter
 		b createKeyLoop
 		
 	addToOutput:
@@ -366,6 +371,7 @@ createKey:
 		addi $s1, $s1, 1
 		li $s6, 1
 		sb $s6, 0($s1)
+		
 	jr $ra
 
 keyIndex:
