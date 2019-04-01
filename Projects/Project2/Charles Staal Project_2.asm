@@ -83,10 +83,12 @@ strcmp:
 	li $a1, 0							# set null terminator for length2char
 	
 	move $a0, $s0						#
+	move $a1, $0
 	jal length2Char						# call length2char for str2
 	move $s7, $v0						# move return value to t2
 	
 	move $a0, $s1						# move str2 to argument
+	move $a1, $0
 	jal length2Char						# call length2char for str2
 	move $t3, $v0						# move return value to t3
 	move $t2, $s7
@@ -150,7 +152,7 @@ strcmp:
 ##############################
 # PART 2 FUNCTIONS
 ##############################
-
+	
 ammendString:
 	# a0 = address of string to be ammended
 	# a1 = offset address of string to be added
@@ -435,8 +437,42 @@ createKey:
 		jr $ra
 
 keyIndex:
-	#Define your code here
-	jr $ra
+	# a0/s0 = address of phrase
+	# v0 = key index
+	
+	# s0 = address of phrase
+	# s1 = address of FMorseCipherArray
+	# s2 = offset of FMorseCipherArray
+	# s3 = add + off MCA
+	# s5 = loop counter / key index, -1 if not found
+	# s7 = return address
+	move $s0, $a0
+	la $s1, FMorseCipherArray
+	li $s2, 0
+	move $s7, $ra
+	keyIndexLoop:
+		beq $s5, 26, notfound
+		add $s3, $s1, $s2
+		move $a0, $s0
+		move $a1, $s3
+		li $a2, 3
+		jal strcmp
+		beq $v1, 1, doneKeyIndex
+		add $s5, $s5, 1
+		add $s2, $s2, 3
+		b keyIndexLoop
+	
+	notFound:
+		li $v0, -1
+		b keyIndexReturn
+	doneKeyIndex:
+		move $v0, $s5
+		b keyIndexReturn
+	
+	keyIndexReturn:
+		move $ra, $s7
+		jr $ra
+	
 
 FMCEncrypt:
 	#Define your code here
