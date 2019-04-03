@@ -495,6 +495,12 @@ keyIndex:
 		beq $s5, 26, notfound
 		add $s3, $s1, $s2
 		move $a0, $s0
+		move $a1, $0
+		pack_stack()
+		jal length2Char
+		unpack_stack()
+		blt $v0, 3, notFound
+		move $a0, $s0
 		move $a1, $s3
 		li $a2, 3
 		pack_stack()

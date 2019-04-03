@@ -59,6 +59,12 @@ createKey_key3: .space 26
 createKey_key4: .space 26
 			   .byte 0
 
+# keyIndex
+keyIndex_mcmsg1: .asciiz "xxx--.x-.x.xx"
+keyIndex_mcmsg2: .asciiz ""
+keyIndex_mcmsg3: .asciiz "--"
+keyIndex_mcmsg4: .asciiz "-x----.....x"
+keyIndex_mcmsg5: .asciiz ".-.x...x"
 # Constants
 .eqv QUIT 10
 .eqv PRINT_STRING 4
@@ -774,6 +780,91 @@ main:
 	print_string(createKey_key4)
 	print_newline
 	print_newline
+
+	############################################
+	# TEST CASE 1 for keyIndex
+	############################################
+	print_ready_string("=== TESTING keyIndex - Test Case 1: Bad Symbol ===\n")
+	print_string(str_input)
+	print_string(keyIndex_mcmsg1)
+	print_newline
+
+	la $a0, keyIndex_mcmsg1
+	jal keyIndex
+
+	move $t0, $v0
+	print_string(str_return)
+	print_int($t0)
+	print_newline
+
+
+	############################################
+	# TEST CASE 2 for keyIndex
+	############################################
+	print_ready_string("=== TESTING keyIndex - Test Case 2: Empyty String ===\n")
+	print_string(str_input)
+	print_string(keyIndex_mcmsg2)
+	print_newline
+
+	la $a0, keyIndex_mcmsg2
+	jal keyIndex
+
+	move $t0, $v0
+	print_string(str_return)
+	print_int($t0)
+	print_newline
+
+
+	############################################
+	# TEST CASE 3 for keyIndex
+	############################################
+	print_ready_string("=== TESTING keyIndex - Test Case 3: Less than 3 chars ===\n")
+	print_string(str_input)
+	print_string(keyIndex_mcmsg3)
+	print_newline
+
+	la $a0, keyIndex_mcmsg3
+	jal keyIndex
+
+	move $t0, $v0
+	print_string(str_return)
+	print_int($t0)
+	print_newline
+
+
+	############################################
+	# TEST CASE 4 for keyIndex
+	############################################
+	print_ready_string("=== TESTING keyIndex - Test Case 4: Match to -x- ===\n") 
+	print_string(str_input)
+	print_string(keyIndex_mcmsg4)
+	print_newline
+
+	la $a0, keyIndex_mcmsg4
+	jal keyIndex
+
+	move $t0, $v0
+	print_string(str_return)
+	print_int($t0)
+	print_newline
+
+
+	############################################
+	# TEST CASE 5 for keyIndex
+	############################################
+	print_ready_string("=== TESTING keyIndex - Test Case 5: Match to .-. ===\n") 
+	print_string(str_input)
+	print_string(keyIndex_mcmsg5)
+	print_newline
+
+	la $a0, keyIndex_mcmsg5
+	jal keyIndex
+
+	move $t0, $v0
+	print_string(str_return)
+	print_int($t0)
+	print_newline
+
 	
 	exit_program
 	
