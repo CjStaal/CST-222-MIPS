@@ -60,21 +60,22 @@ strcmp:
 	# s0 = str1
 	# s1 = str2
 	# s2 = length
-	# s3 = str1byte
-	# s4 = str2byte
 	# a2 = length
 	# t0 = offset of str1
 	# t1 = offset of str2
 	# t2 = length of str1
 	# t3 = length of str2
 	# t4 = counter
+	# t5 = str1byte
+	# t6 = str2byte
+	# t7 = length
 	# v0 = number of matching characters
 	# v1 = if strings matched, 1, otherwise 0
-	# t7 = return address
+	# s6 = return address
 	# s7 = preserve length of str1 during jump
 
 	#Save registers
-	move $t7, $ra						#
+	move $s6, $ra						#
 	
 	move $s0, $a0						# save str1 to s0
 	move $s1, $a1						# save str2 to s1
@@ -92,9 +93,10 @@ strcmp:
 	jal length2Char						# call length2char for str2
 	move $t3, $v0						# move return value to t3
 	move $t2, $s7
-	bltz $s2, error						# if length is less than zero, return 0,0
-	bgt $s2, $t2, error					# if length is greater than length of string1, return 0,0
-	bgt $s2, $t3, error					# if length is greater than length of string2, return 0,0
+	move $t7, $s2
+	bltz $t7, error						# if length is less than zero, return 0,0
+	bgt $t7, $t2, error					# if length is greater than length of string1, return 0,0
+	bgt $t7, $t3, error					# if length is greater than length of string2, return 0,0
 	
 	# initialize the things
 	li $t0, 0							#
@@ -106,12 +108,12 @@ strcmp:
 	beqz $a2, a2isZero					# if a2 is zero, find out if strings are equal, if not, find the difference and add that to v1, and set v0 to 0
 	
 	strCmpLoop:							#
-		beq $t4, $s2, done				# it is done once we get to the end of the strings
+		beq $t4, $t7, done				# it is done once we get to the end of the strings
 		add $t0, $s0, $t4				# address + offset for byte to be used from source1
 		add $t1, $s1, $t4				# address + offset for byte to be used from source2
-		lb $s3, 0($t0)					# load up that there byte from string 1
-		lb $s4, 0($t1)					# load up that there byte from string 2
-		bne $s3, $s4, different			# Are they equal? If not lets go down to label different
+		lb $t5, 0($t0)					# load up that there byte from string 1
+		lb $t6, 0($t1)					# load up that there byte from string 2
+		bne $t5, $t6, different			# Are they equal? If not lets go down to label different
 		add $v0, $v0, 1					# Seems like they're equal. Lets increment 'same' counter
 		returntoLoop:					#
 		add $t4, $t4, 1					# Lets increment our index
@@ -121,18 +123,18 @@ strcmp:
 	# if one string is larger than the other, add the difference to the amount of different chars and set v0 to 0
 	a2isZero:							#
 		bne $t2, $t3, strDiffSize		# if the strings are a different size, branch
-		move $s2, $t2					# else it's the same size, so lets just make the length one of the lengths of the two strings
+		move $t7, $t2					# else it's the same size, so lets just make the length one of the lengths of the two strings
 		b strCmpLoop					# hop on back now ya'll
 	
 	
 	strDiffSize:						#
 		li $v1, 0						# Well we know they don't match already there partna'
 		blt $t2, $t3, t2Lt3				# Lets save whichever one is lower in to s2
-		move $s2, $t3					# right now I guess t3 is lower
+		move $t7, $t3					# right now I guess t3 is lower
 		b strCmpLoop					#
 	
 	t2Lt3:								#
-		move $s2, $t2					# right now t2 is lower 
+		move $t7, $t2					# right now t2 is lower 
 		b strCmpLoop					#
 	
 	
@@ -146,7 +148,7 @@ strcmp:
 		b returntoLoop					#
 		
 	done:								#
-		move $ra, $t7					# lets move the address back in to ra
+		move $ra, $s6					# lets move the address back in to ra
 		jr $ra							# hop on back
 
 ##############################
@@ -447,9 +449,10 @@ keyIndex:
 	# s5 = loop counter / key index, -1 if not found
 	# s7 = return address
 	move $s0, $a0
+	sw $ra, KeyIndexReturn
 	la $s1, FMorseCipherArray
 	li $s2, 0
-	move $s7, $ra
+	li $s5, 0
 	keyIndexLoop:
 		beq $s5, 26, notfound
 		add $s3, $s1, $s2
@@ -470,7 +473,7 @@ keyIndex:
 		b keyIndexReturn
 	
 	keyIndexReturn:
-		move $ra, $s7
+		lw $ra, KeyIndexReturn
 		jr $ra
 	
 
@@ -561,5 +564,6 @@ MorseW: .asciiz ".--"
 MorseX: .asciiz "-..-"
 MorseY: .asciiz "-.--"
 MorseZ: .asciiz "--.."
+KeyIndexReturn: .word 1
 
 FMorseCipherArray: .asciiz ".....-..x.-..--.-x.x..x-.xx-..-.--.x--.-----x-x.-x--xxx..x.-x.xx-.x--x-xxx.xx-"
