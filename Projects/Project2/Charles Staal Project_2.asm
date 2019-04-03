@@ -9,7 +9,33 @@
 ##############################
 # PART 1 FUNCTIONS 
 ##############################
+# pack it, stuff stack with jump and $s register data
+.macro pack_stack()
+	subi $sp, $sp, 36 # 9 (items) * 4 (width)
+	sw $ra, 0($sp) # 0 ->
+	sw $s7, 4($sp)
+	sw $s6, 8($sp)
+	sw $s5, 12($sp)
+	sw $s4, 16($sp)
+	sw $s3, 20($sp)
+	sw $s2, 24($sp)
+	sw $s1, 28($sp)
+	sw $s0, 32($sp) # -> 36
+.end_macro
 
+# unpack the stack, roll it back to original content
+.macro unpack_stack()
+	lw $ra, 0($sp) # 0 ->
+	lw $s7, 4($sp)
+	lw $s6, 8($sp)
+	lw $s5, 12($sp)
+	lw $s4, 16($sp)
+	lw $s3, 20($sp)
+	lw $s2, 24($sp)
+	lw $s1, 28($sp)
+	lw $s0, 32($sp) # -> 36
+	addi $sp, $sp, 36 # 9 (items) * 4 (width)
+.end_macro
 toUpper:
 	# t0 = byte counter
 	# t1 = char value
@@ -85,12 +111,16 @@ strcmp:
 	
 	move $a0, $s0						#
 	move $a1, $0
+	pack_stack()
 	jal length2Char						# call length2char for str2
+	unpack_stack()
 	move $s7, $v0						# move return value to t2
 	
 	move $a0, $s1						# move str2 to argument
 	move $a1, $0
+	pack_stack()
 	jal length2Char						# call length2char for str2
+	unpack_stack()
 	move $t3, $v0						# move return value to t3
 	move $t2, $s7
 	move $t7, $s2
@@ -244,7 +274,6 @@ toMorse:
 	# s4 = offset of s1
 	# s5 = character to be encoded
 	# s6 = flag if any type of error
-	# s7 = return address
 	
 	# t0 = offset + base address of a0
 	# t1 = offset + base address of a1
@@ -258,7 +287,6 @@ toMorse:
 	move $s0, $a0
 	move $s1, $a1						#
 	move $s2, $a2						#
-	move $s7, $ra						#
 
 	
 	blt $a2, 1, invalidEntry			#
@@ -275,13 +303,17 @@ toMorse:
 		lb $s5, 0($t0)					# character from source string to be encoded
 		beq $s5, '\0', finishedCorrectly#
 		move $a0, $s5					# move that character in to argument 0
-		jal morseLookup					# returns address of the morse string in to v0 for character in s0
+		pack_stack()
+		jal morseLookup
+		unpack_stack()
 		beq $v1, 0, skip				# if it returned 0 in v1, that means there is no morse for that character, so skip it
 		move $a1, $v0					# address of morse string
 		move $a0, $s1					# address of destination string
 		move $a2, $s4					# index of s1 (where to start ammending)
 		move $a3, $s2					# destination string size
-		jal ammendString				# v0 = address of ammended string, v1 = new s4
+		pack_stack()
+		jal ammendString
+		unpack_stack()
 		move $s1, $v0					# move return address in to s1
 		move $s4, $v1					# move new s1 offset back in
 		beq $s4, -1, unfinished
@@ -302,7 +334,9 @@ toMorse:
 		move $a0, $s1
 		move $a2, $s4
 		move $a3, $s2
+		pack_stack()
 		jal ammendString
+		unpack_stack()
 		move $s1, $v0					# move return address in to s1
 		move $s4, $v1					# move new s1 offset back in
 		beq $s4, -1, unfinished
@@ -312,7 +346,6 @@ toMorse:
 	invalidEntry:						#
 		li $v0, 0						#
 		li $v1, 0						#
-		move $ra, $s7					#
 		jr $ra							#
 		
 	unfinished:							#
@@ -331,7 +364,9 @@ toMorse:
 		move $a0, $s1					# address of destination string
 		move $a2, $s4					# index of s1 (where to start ammending)
 		move $a3, $s2					# destination string size
-		jal ammendString				# v0 = address of ammended string, v1 = new s4
+		pack_stack()
+		jal ammendString
+		unpack_stack()
 		move $s1, $v0					# move return address in to s1
 		move $s4, $v1					# move new s1 offset back in
 		beq $s4, -1, unfinished
@@ -349,10 +384,11 @@ toMorse:
 	endToMorse:							#
 		move $a0, $s1
 		move $a1, $0
+		pack_stack()
 		jal length2Char
+		unpack_stack()
 		add $v0, $v0, 1					# because he wants the length INCLUDING the null? wtf?
 		move $v1, $s6
-		move $ra, $s7					#
 		jr $ra							#
 
 	
@@ -373,17 +409,21 @@ createKey:
 	# t5 = address + offset/index output phrase
 	# t6 = address + offset ( t2) checkArray
 	# t7 = index for output
-	# s7 = return address
 	# v0 = address of CheckArray
 	# v1 = char from CheckArray
 	move $s0, $a0
 	move $s1, $a1
-	move $s7, $ra
-	jal zeroCheckArray
-	jal length2Char
+	pack_stack()
+	jal zeroCheckArray	# call length2char for str2
+	unpack_stack()
+	pack_stack()
+	jal length2Char	# call length2char for str2
+	unpack_stack()
 	move $s2, $v0
 	move $a0, $s0
+	pack_stack()
 	jal toUpper
+	unpack_stack()
 	move $s0, $v0
 	li $t0, 0
 	
@@ -435,7 +475,6 @@ createKey:
 	createKeyDone:
 		li $t1, '\0'
 		sb $t1, 0($t5)
-		move $ra, $s7
 		jr $ra
 
 keyIndex:
@@ -449,7 +488,6 @@ keyIndex:
 	# s5 = loop counter / key index, -1 if not found
 	# s7 = return address
 	move $s0, $a0
-	sw $ra, KeyIndexReturn
 	la $s1, FMorseCipherArray
 	li $s2, 0
 	li $s5, 0
@@ -459,7 +497,9 @@ keyIndex:
 		move $a0, $s0
 		move $a1, $s3
 		li $a2, 3
+		pack_stack()
 		jal strcmp
+		unpack_stack()
 		beq $v1, 1, doneKeyIndex
 		add $s5, $s5, 1
 		add $s2, $s2, 3
@@ -473,7 +513,6 @@ keyIndex:
 		b keyIndexReturn
 	
 	keyIndexReturn:
-		lw $ra, KeyIndexReturn
 		jr $ra
 	
 
@@ -564,6 +603,5 @@ MorseW: .asciiz ".--"
 MorseX: .asciiz "-..-"
 MorseY: .asciiz "-.--"
 MorseZ: .asciiz "--.."
-KeyIndexReturn: .word 1
 
 FMorseCipherArray: .asciiz ".....-..x.-..--.-x.x..x-.xx-..-.--.x--.-----x-x.-x--xxx..x.-x.xx-.x--x-xxx.xx-"
