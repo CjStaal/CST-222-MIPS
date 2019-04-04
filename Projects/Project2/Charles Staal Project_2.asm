@@ -38,23 +38,24 @@
 .end_macro
 
 toUpper:
+	# a0 = starting address of string
 	# t0 = byte counter
 	# t1 = char value
 	# t2 = offset
+	# t3 = address of string (can be incremented)
 	# v0 = return value
 	
 	li $t0, 0							# intialize byte counter to zero
-	
+	move $t3, $a0						# copy over the starting address of the string
 	loopToUpper:						#
-		add $t2, $a0, $t0				# add base address to counter creating offset address
-		lb $t1, 0($t2)					# load byte to be manipulated
+		lb $t1, 0($t3)					# load byte to be manipulated
 		beq $t1, '\0' doneToUpper		# if a null bit, we are at the end of the string
 		blt $t1, 'a', endofloopToUpper	# if char is less than 97 skip it
 		bgt $t1, 'z', endofloopToUpper	# or if char is greater than 122 skip it
 		and $t1, $t1, '_'				# clear 5th bit
-		sb $t1, 0($t2)					# store manipulated byte
+		sb $t1, 0($t3)					# store manipulated byte
 		endofloopToUpper:				#
-		addi $t0, $t0, 1				# increment counter
+		addi $t3, $t3, 1				# add base address to counter creating offset address
 		b loopToUpper					#
 	doneToUpper:						#
 	move $v0, $a0						# move final value to return value
@@ -62,14 +63,15 @@ toUpper:
 
 length2Char:
 	# v0 = counter/ strlength
-	# a0 = address of string
+	# a0 = starting address of string
 	# a1 = address of specified terminator
 	# t1 = string address
 	# t2 = terminator char
+	# v0 = length to be returned
+	
 	li $v0, 0							#
 	beqz $a1, a1null					#
 	lb $t2, 0($a1)						#
-	
 	loopLength2Char:					#
 		lb $t0, 0($a0)					# load char
 		beq $t0, $t2, doneLength2Char	# if char = terminator
@@ -80,22 +82,17 @@ length2Char:
 	doneLength2Char:					#
 	jr $ra								#
 	a1null:								#
-		li $t2, '\0'					#
+		move $t2, $0					#
 		b loopLength2Char				#
 
 strcmp:
 	# s0 = str1
 	# s1 = str2
-	# s2 = length
 	# a2 = length
-	# t0 = offset of str1
-	# t1 = offset of str2
-	# t2 = length of str1
-	# t3 = length of str2
-	# t4 = counter
-	# t5 = str1byte
-	# t6 = str2byte
-	# t7 = length
+	# s2 = length of str1
+	# s3 = length of str2
+	# t0 = str1byte
+	# t1 = str2byte
 	# v0 = number of matching characters
 	# v1 = if strings matched, 1, otherwise 0
 	# s6 = return address
@@ -106,28 +103,19 @@ strcmp:
 	
 	move $s0, $a0						# save str1 to s0
 	move $s1, $a1						# save str2 to s1
-	move $s2, $a2						# save length to s2
 	
 	li $a1, 0							# set null terminator for length2char
-	
-	move $a0, $s0						#
-	move $a1, $0
 	jal length2Char						# call length2char for str2
-	move $s7, $v0						# move return value to t2
+	move $s2, $v0						# move return value to t2
 	
 	move $a0, $s1						# move str2 to argument
-	move $a1, $0
 	jal length2Char						# call length2char for str2
-	move $t3, $v0						# move return value to t3
-	move $t2, $s7
-	move $t7, $s2
-	bltz $t7, error						# if length is less than zero, return 0,0
-	bgt $t7, $t2, error					# if length is greater than length of string1, return 0,0
-	bgt $t7, $t3, error					# if length is greater than length of string2, return 0,0
+	move $s3, $v0						# move return value to t3
+	bltz $a2, error						# if length is less than zero, return 0,0
+	bgt $a2, $s2, error					# if length is greater than length of string1, return 0,0
+	bgt $a2, $s3, error					# if length is greater than length of string2, return 0,0
 	
-	# initialize the things
-	li $t0, 0							#
-	li $t1, 0							#
+	# initialize the things=
 	li $t4, 0							#
 	li $v0, 0							#
 	li $v1, 1							#
@@ -135,33 +123,33 @@ strcmp:
 	beqz $a2, a2isZero					# if a2 is zero, find out if strings are equal, if not, find the difference and add that to v1, and set v0 to 0
 	
 	strCmpLoop:							#
-		beq $t4, $t7, done				# it is done once we get to the end of the strings
-		add $t0, $s0, $t4				# address + offset for byte to be used from source1
-		add $t1, $s1, $t4				# address + offset for byte to be used from source2
-		lb $t5, 0($t0)					# load up that there byte from string 1
-		lb $t6, 0($t1)					# load up that there byte from string 2
-		bne $t5, $t6, different			# Are they equal? If not lets go down to label different
+		beqz $a2, done				# it is done once we get to the end of the strings
+		lb $t0, 0($s0)					# load up that there byte from string 1
+		lb $t1, 0($s1)					# load up that there byte from string 2
+		bne $t0, $t1, different			# Are they equal? If not lets go down to label different
 		add $v0, $v0, 1					# Seems like they're equal. Lets increment 'same' counter
 		returntoLoop:					#
-		add $t4, $t4, 1					# Lets increment our index
+		addi $s0, $s0, 1
+		addi $s1, $s1, 1
+		sub $a2, $a2, 1
 		b strCmpLoop					#
 		
 		
 	# if one string is larger than the other, add the difference to the amount of different chars and set v0 to 0
 	a2isZero:							#
-		bne $t2, $t3, strDiffSize		# if the strings are a different size, branch
-		move $t7, $t2					# else it's the same size, so lets just make the length one of the lengths of the two strings
+		bne $s2, $s3, strDiffSize		# if the strings are a different size, branch
+		move $a2, $s2					# else it's the same size, so lets just make the length one of the lengths of the two strings
 		b strCmpLoop					# hop on back now ya'll
 	
 	
 	strDiffSize:						#
 		li $v1, 0						# Well we know they don't match already there partna'
-		blt $t2, $t3, t2Lt3				# Lets save whichever one is lower in to s2
-		move $t7, $t3					# right now I guess t3 is lower
+		blt $s2, $s3, t2Lt3				# Lets save whichever one is lower in to s2
+		move $a2, $s3					# right now I guess s3 is lower
 		b strCmpLoop					#
 	
 	t2Lt3:								#
-		move $t7, $t2					# right now t2 is lower 
+		move $a2, $s2					# right now s2 is lower 
 		b strCmpLoop					#
 	
 	
@@ -177,6 +165,7 @@ strcmp:
 	done:								#
 		unpack_stack()
 		jr $ra							# hop on back
+
 
 ##############################
 # PART 2 FUNCTIONS
@@ -499,6 +488,7 @@ keyIndex:
 		bne $s5, 25, returnKeyIndexLoop
 		li $v0, -1
 		b keyIndexReturn
+		
 	doneKeyIndex:
 		move $v0, $s5
 		b keyIndexReturn
@@ -513,13 +503,10 @@ FMCEncrypt:
 	# s1 = address of phrase
 	# s2 = address of encryptBuffer
 	# s3 = encryptBufferSize
-	# s4 = address of MorsedMsg
-	# s5 = size of MorseMsg
-	# s6 = address of created keyphrase
-	# s7 = offset
-	# t1 = address + offset of key phrase
-	# t2 = address + offset of encryptbuffer
-	# v0 = address of decryptBuffer
+	# s4 = offset for MorsedMsg
+	# s5 = add + offset for EncryptBuffer
+	# s6 = counter
+	# v0 = address of encryptBuffer
 	# v1 = 1 if completely encoded, otherwise 0
 	
 	pack_stack()
@@ -527,41 +514,63 @@ FMCEncrypt:
 	move $s1, $a1
 	move $s2, $a2
 	move $s3, $a3
-	la $s4, MorsedMsg
-	li $s5, 404
-	la $s6, keyPhrase
+	
 	move $a0, $s0
-	move $a1, $s4
-	move $a2, $s5
-	li $v1, 1
+	
+	la $a1, MorsedMsg
+	li $a2, 404
 	jal toMorse
-	beq $v1, 1, skipToggle
-	li $v1, 0
-	skipToggle:
+	
 	move $a0, $s1
-	move $a1, $s6
+	la $a1, keyPhrase
 	jal createKey
 	
-	EncryptLoop:
-		beq $s7, $s3, finishedEncrypt
-		lb $t1, 0($s1)
-		beq $t1, $0, finishedEncryptFull
-		move $a0, $s4
-		jal keyIndex				# find key index of the next 3 chars of the specified address
-		add $t1, $s6, $v0			# Take the address of the keyPhrase, offset it by the key index, and we have the address of the encrypted char
-		add $t2, $s2, $s7
-		lb $t1, 0($t1)				# load that char 
-		sb $t1, 0($t2)				# store that char in to the encrypted msg
-		addi $s7, $s7, 1			# increment counter by 1
-		addi $s0, $s0, 3			# increment the ciphertext by 3 (since we are going by 3's)
+	li $s4, 0
+	move $s5, $s2
+	li $s6, 0
 	
-	
-	finishedEncrypt:
-	
-	finishedEncryptFull:
-	############################################
-	unpack_stack()
-	jr $ra
+	encryptLoop:
+		la $t3, MorsedMsg($s4)
+		# load the three bytes
+		lb $t0, 0($t3)
+		lb $t1, 1($t3)
+		lb $t2, 2($t3)
+		
+		beqz $t0, fmcEnd
+		beqz $t1, fmcEnd
+		beqz $t2, fmcEnd
+		
+		beq $s6, $s3, fmcError
+		
+		la $a0, MorsedMsg($s4)
+		jal keyIndex
+		
+		beq $v0, -1, fmcError
+		
+		lb $t1, keyPhrase($t0)
+		sb $t1, ($s5)
+		
+		addi $s4, $s4, 3
+		addi $s5, $s5, 1
+		addi $s6, $s6, 1
+		j encryptLoop
+		
+	fmcEnd:
+		move $t0, $0
+		sb $t0, ($s5)
+		move $v0, $s2
+		li $v1, 1
+		b unpackAndLeave
+		
+	fmcError:
+		sb $0, ($s2)
+		move $v0, $s2
+		li $v1, -1
+		b unpackAndLeave
+		
+	unpackAndLeave:
+		unpack_stack()
+		jr $ra
 
 ##############################
 # EXTRA CREDIT FUNCTIONS
