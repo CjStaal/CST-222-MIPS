@@ -65,6 +65,20 @@ keyIndex_mcmsg2: .asciiz ""
 keyIndex_mcmsg3: .asciiz "--"
 keyIndex_mcmsg4: .asciiz "-x----.....x"
 keyIndex_mcmsg5: .asciiz ".-.x...x"
+
+#FMCEncrypt
+FMCEncrypt_plaintext1: .asciiz "COMPUTER SCIENCE IS AWESOME!"
+FMCEncrypt_phrase1: .asciiz "computer science is fun"
+FMCEncrypt_plaintext2: .asciiz "COMPUTER SCIENCE IS AWESOME!"
+FMCEncrypt_phrase2: .asciiz "computer science is fun"
+FMCEncrypt_encryptBuffer1: .space 35
+FMCEncrypt_encryptBuffer2: .space 20
+.align 2
+FMCEncrypt_size1: .word 35
+.align 2
+FMCEncrypt_size2: .word 20
+
+
 # Constants
 .eqv QUIT 10
 .eqv PRINT_STRING 4
@@ -796,6 +810,7 @@ main:
 	print_string(str_return)
 	print_int($t0)
 	print_newline
+	print_newline
 
 
 	############################################
@@ -812,6 +827,7 @@ main:
 	move $t0, $v0
 	print_string(str_return)
 	print_int($t0)
+	print_newline
 	print_newline
 
 
@@ -830,6 +846,7 @@ main:
 	print_string(str_return)
 	print_int($t0)
 	print_newline
+	print_newline
 
 
 	############################################
@@ -847,6 +864,7 @@ main:
 	print_string(str_return)
 	print_int($t0)
 	print_newline
+	print_newline
 
 
 	############################################
@@ -863,6 +881,81 @@ main:
 	move $t0, $v0
 	print_string(str_return)
 	print_int($t0)
+	print_newline
+	print_newline
+
+
+	############################################
+	# TEST CASE 1 for FMCEncrypt
+	############################################
+	print_ready_string("=== TESTING FMCEncrypt Test Case 1: Correctly encrypt with enough space ===\n")
+	print_string(str_input)
+	print_string(FMCEncrypt_plaintext1)
+	print_newline
+	print_string(str_input)
+	print_string(FMCEncrypt_phrase1)
+	print_newline
+	print_string(str_input)
+	print_string(FMCEncrypt_encryptBuffer1)
+	print_newline
+	print_string(str_input)
+	lw $t9, FMCEncrypt_size1
+	print_int($t9)
+	print_newline
+
+	la $a0, FMCEncrypt_plaintext1
+	la $a1, FMCEncrypt_phrase1
+	la $a2, FMCEncrypt_encryptBuffer1
+	lw $a3, FMCEncrypt_size1
+	jal FMCEncrypt
+
+	move $t0, $v0
+	move $t1, $v1
+
+	print_string(str_return)
+	print_string_reg($t0)
+	print_newline
+
+	print_string(str_return)
+	print_int($t1)
+	print_newline
+	print_newline
+
+
+	############################################
+	# TEST CASE 2 for FMCEncrypt
+	############################################
+	print_ready_string("=== TESTING FMCEncrypt Test Case 2: Correctly encrypt with NOT enough space ===\n")
+	print_string(str_input)
+	print_string(FMCEncrypt_plaintext2)
+	print_newline
+	print_string(str_input)
+	print_string(FMCEncrypt_phrase2)
+	print_newline
+	print_string(str_input)
+	print_string(FMCEncrypt_encryptBuffer2)
+	print_newline
+	print_string(str_input)
+	lw $t9, FMCEncrypt_size2
+	print_int($t9)
+	print_newline
+
+	la $a0, FMCEncrypt_plaintext2
+	la $a1, FMCEncrypt_phrase2
+	la $a2, FMCEncrypt_encryptBuffer2
+	lw $a3, FMCEncrypt_size2
+	jal FMCEncrypt
+
+	move $t0, $v0
+	move $t1, $v1
+
+	print_string(str_return)
+	print_string_reg($t0)
+	print_newline
+
+	print_string(str_return)
+	print_int($t1)
+	print_newline
 	print_newline
 
 	
