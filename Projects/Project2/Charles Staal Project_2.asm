@@ -507,11 +507,14 @@ keyIndex:
 		jal strcmp
 		unpack_stack()
 		beq $v1, 1, doneKeyIndex
+		beq $v1, 0, notFound
+		returnKeyIndexLoop:
 		add $s5, $s5, 1
 		add $s2, $s2, 3
 		b keyIndexLoop
 	
 	notFound:
+		bne $s5, 25, returnKeyIndexLoop
 		li $v0, -1
 		b keyIndexReturn
 	doneKeyIndex:
@@ -523,10 +526,61 @@ keyIndex:
 	
 
 FMCEncrypt:
-	#Define your code here
-	############################################
-	# DELETE THIS CODE. Only here to allow main program to run without fully implementing the function
-	la $v0, FMorseCipherArray
+	# s0 = address of cipherText
+	# s1 = address of phrase
+	# s2 = address of encryptBuffer
+	# s3 = encryptBufferSize
+	# s4 = address of MorsedMsg
+	# s5 = size of MorseMsg
+	# s6 = address of created keyphrase
+	# s7 = offset
+	# t1 = address + offset of key phrase
+	# t2 = address + offset of encryptbuffer
+	# v0 = address of decryptBuffer
+	# v1 = 1 if completely encoded, otherwise 0
+	
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	move $s3, $a3
+	la $s4, MorsedMsg
+	li $s5, 404
+	la $s6, keyPhrase
+	move $a0, $s0
+	move $a1, $s4
+	move $a2, $s5
+	li $v1, 1
+	pack_stack()
+	jal toMorse
+	unpack_stack()
+	beq $v1, 1, skipToggle
+	li $v1, 0
+	skipToggle:
+	move $a0, $s1
+	move $a1, $s6
+	pack_stack()
+	jal createKey
+	unpack_stack()
+	
+	EncryptLoop:
+		beq $s7, $s3, finishedEncrypt
+		lb $t1, 0($s1)
+		beq $t1, $0, finishedEncryptFull
+		move $a0, $s4
+		pack_stack()
+		jal keyIndex				# find key index of the next 3 chars of the specified address
+		unpack_stack()
+		add $t1, $s6, $v0			# Take the address of the keyPhrase, offset it by the key index, and we have the address of the encrypted char
+		add $t2, $s2, $s7
+		lb $t1, 0($t1)				# load that char 
+		sb $t1, 0($t2)				# store that char in to the encrypted msg
+		addi $s7, $s7, 1			# increment counter by 1
+		addi $s0, $s0, 3			# increment the ciphertext by 3 (since we are going by 3's)
+	
+	
+	finishedEncrypt:
+	
+	finishedEncryptFull:
 	############################################
 	jr $ra
 
@@ -609,5 +663,6 @@ MorseW: .asciiz ".--"
 MorseX: .asciiz "-..-"
 MorseY: .asciiz "-.--"
 MorseZ: .asciiz "--.."
-
+MorsedMsg: .word 404
+keyPhrase: .word 104
 FMorseCipherArray: .asciiz ".....-..x.-..--.-x.x..x-.xx-..-.--.x--.-----x-x.-x--xxx..x.-x.xx-.x--x-xxx.xx-"
