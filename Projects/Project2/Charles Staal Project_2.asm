@@ -86,17 +86,18 @@ length2Char:
 		b loopLength2Char				#
 
 strcmp:
+	# a2 = length
+	
 	# s0 = str1
 	# s1 = str2
-	# a2 = length
 	# s2 = length of str1
 	# s3 = length of str2
+	
 	# t0 = str1byte
 	# t1 = str2byte
+	
 	# v0 = number of matching characters
 	# v1 = if strings matched, 1, otherwise 0
-	# s6 = return address
-	# s7 = preserve length of str1 during jump
 
 	#Save registers
 	pack_stack()
@@ -111,12 +112,12 @@ strcmp:
 	move $a0, $s1						# move str2 to argument
 	jal length2Char						# call length2char for str2
 	move $s3, $v0						# move return value to t3
+	
 	bltz $a2, error						# if length is less than zero, return 0,0
 	bgt $a2, $s2, error					# if length is greater than length of string1, return 0,0
 	bgt $a2, $s3, error					# if length is greater than length of string2, return 0,0
 	
 	# initialize the things=
-	li $t4, 0							#
 	li $v0, 0							#
 	li $v1, 1							#
 
@@ -183,8 +184,7 @@ ammendString:
 	# t3 = offset of a1
 	# t4 = byte to be added to a0
 	# t5 = a3 - 1. for a0 index 
-	# v0 = address of a0
-	# v1 = new a3, or -1 if filled and wasn't able to finish 
+	# v0 = new a3, or -1 if filled and wasn't able to finish 
 	move $t2, $a2						#
 	li $t3, 0							# gotta zero it out so I'm not a dumbass
 	
@@ -200,13 +200,11 @@ ammendString:
 		b ammendLoop					# lets keep it movin'
 	
 	stringFull:
-		move $v0, $a0					# move the address of the destination string to v0
-		li $v1, -1						# Lets let them know where we are full on the destination string via v1
+		li $v0, -1						# Lets let them know where we are full on the destination string via v1
 		jr $ra							# jump wit it
 	
 	finishedAmmend:
-		move $v0, $a0					# again lets move the address of the destination string to v0
-		move $v1, $t2					# let them know this is where we are on the destination string
+		move $v0, $t2					# let them know this is where we are on the destination string
 		jr $ra							# jump wit it
 		
 morseLookup:
@@ -276,11 +274,11 @@ toMorse:
 	move $s2, $a2						#
 
 	
+	li $s6, 1							#
 	blt $a2, 1, invalidEntry			#
 	lb $t4, 0($s0)
 	beq $t4 '\0', endToMorse
 	
-	li $s6, 1							#
 	li $s3, 0							#
 	li $s4, 0							#
 	
@@ -297,8 +295,7 @@ toMorse:
 		move $a2, $s4					# index of s1 (where to start ammending)
 		move $a3, $s2					# destination string size
 		jal ammendString
-		move $s1, $v0					# move return address in to s1
-		move $s4, $v1					# move new s1 offset back in
+		move $s4, $v0					# move new s1 offset back in
 		beq $s4, -1, unfinished
 		bne $s5, ' ', addX
 		returnFromAddX:
@@ -318,8 +315,7 @@ toMorse:
 		move $a2, $s4
 		move $a3, $s2
 		jal ammendString
-		move $s1, $v0					# move return address in to s1
-		move $s4, $v1					# move new s1 offset back in
+		move $s4, $v0					# move new s1 offset back in
 		beq $s4, -1, unfinished
 		b returnFromAddX
 		
@@ -346,8 +342,7 @@ toMorse:
 		move $a2, $s4					# index of s1 (where to start ammending)
 		move $a3, $s2					# destination string size
 		jal ammendString
-		move $s1, $v0					# move return address in to s1
-		move $s4, $v1					# move new s1 offset back in
+		move $s4, $v0					# move new s1 offset back in
 		beq $s4, -1, unfinished
 		dontAddSpaceAtEnd:
 		add $t1, $a1, $s4
@@ -359,7 +354,7 @@ toMorse:
 		lb $t4, 0($t0)					#
 		beq $t4, '\0', finishedCorrectly#
 		b endToMorse					#
-		
+
 	endToMorse:							#
 		move $a0, $s1
 		move $a1, $0
