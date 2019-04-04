@@ -522,6 +522,7 @@ FMCEncrypt:
 	# v0 = address of decryptBuffer
 	# v1 = 1 if completely encoded, otherwise 0
 	
+	pack_stack()
 	move $s0, $a0
 	move $s1, $a1
 	move $s2, $a2
@@ -533,26 +534,20 @@ FMCEncrypt:
 	move $a1, $s4
 	move $a2, $s5
 	li $v1, 1
-	pack_stack()
 	jal toMorse
-	unpack_stack()
 	beq $v1, 1, skipToggle
 	li $v1, 0
 	skipToggle:
 	move $a0, $s1
 	move $a1, $s6
-	pack_stack()
 	jal createKey
-	unpack_stack()
 	
 	EncryptLoop:
 		beq $s7, $s3, finishedEncrypt
 		lb $t1, 0($s1)
 		beq $t1, $0, finishedEncryptFull
 		move $a0, $s4
-		pack_stack()
 		jal keyIndex				# find key index of the next 3 chars of the specified address
-		unpack_stack()
 		add $t1, $s6, $v0			# Take the address of the keyPhrase, offset it by the key index, and we have the address of the encrypted char
 		add $t2, $s2, $s7
 		lb $t1, 0($t1)				# load that char 
@@ -565,6 +560,7 @@ FMCEncrypt:
 	
 	finishedEncryptFull:
 	############################################
+	unpack_stack()
 	jr $ra
 
 ##############################
