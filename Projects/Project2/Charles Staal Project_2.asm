@@ -36,6 +36,7 @@
 	lw $s0, 32($sp) # -> 36
 	addi $sp, $sp, 36 # 9 (items) * 4 (width)
 .end_macro
+
 toUpper:
 	# t0 = byte counter
 	# t1 = char value
@@ -101,7 +102,7 @@ strcmp:
 	# s7 = preserve length of str1 during jump
 
 	#Save registers
-	move $s6, $ra						#
+	pack_stack()
 	
 	move $s0, $a0						# save str1 to s0
 	move $s1, $a1						# save str2 to s1
@@ -111,16 +112,12 @@ strcmp:
 	
 	move $a0, $s0						#
 	move $a1, $0
-	pack_stack()
 	jal length2Char						# call length2char for str2
-	unpack_stack()
 	move $s7, $v0						# move return value to t2
 	
 	move $a0, $s1						# move str2 to argument
 	move $a1, $0
-	pack_stack()
 	jal length2Char						# call length2char for str2
-	unpack_stack()
 	move $t3, $v0						# move return value to t3
 	move $t2, $s7
 	move $t7, $s2
@@ -178,7 +175,7 @@ strcmp:
 		b returntoLoop					#
 		
 	done:								#
-		move $ra, $s6					# lets move the address back in to ra
+		unpack_stack()
 		jr $ra							# hop on back
 
 ##############################
@@ -284,6 +281,7 @@ toMorse:
 	# v1 = returns 1 if string was completely and correctly encoded, otherwise 0
 	
 	# save registers
+	pack_stack()
 	move $s0, $a0
 	move $s1, $a1						#
 	move $s2, $a2						#
@@ -303,17 +301,13 @@ toMorse:
 		lb $s5, 0($t0)					# character from source string to be encoded
 		beq $s5, '\0', finishedCorrectly#
 		move $a0, $s5					# move that character in to argument 0
-		pack_stack()
 		jal morseLookup
-		unpack_stack()
 		beq $v1, 0, skip				# if it returned 0 in v1, that means there is no morse for that character, so skip it
 		move $a1, $v0					# address of morse string
 		move $a0, $s1					# address of destination string
 		move $a2, $s4					# index of s1 (where to start ammending)
 		move $a3, $s2					# destination string size
-		pack_stack()
 		jal ammendString
-		unpack_stack()
 		move $s1, $v0					# move return address in to s1
 		move $s4, $v1					# move new s1 offset back in
 		beq $s4, -1, unfinished
@@ -334,9 +328,7 @@ toMorse:
 		move $a0, $s1
 		move $a2, $s4
 		move $a3, $s2
-		pack_stack()
 		jal ammendString
-		unpack_stack()
 		move $s1, $v0					# move return address in to s1
 		move $s4, $v1					# move new s1 offset back in
 		beq $s4, -1, unfinished
@@ -364,9 +356,7 @@ toMorse:
 		move $a0, $s1					# address of destination string
 		move $a2, $s4					# index of s1 (where to start ammending)
 		move $a3, $s2					# destination string size
-		pack_stack()
 		jal ammendString
-		unpack_stack()
 		move $s1, $v0					# move return address in to s1
 		move $s4, $v1					# move new s1 offset back in
 		beq $s4, -1, unfinished
@@ -384,11 +374,10 @@ toMorse:
 	endToMorse:							#
 		move $a0, $s1
 		move $a1, $0
-		pack_stack()
 		jal length2Char
-		unpack_stack()
 		add $v0, $v0, 1					# because he wants the length INCLUDING the null? wtf?
 		move $v1, $s6
+		unpack_stack()
 		jr $ra							#
 
 	
@@ -411,19 +400,14 @@ createKey:
 	# t7 = index for output
 	# v0 = address of CheckArray
 	# v1 = char from CheckArray
+	pack_stack()
 	move $s0, $a0
 	move $s1, $a1
-	pack_stack()
 	jal zeroCheckArray	# call length2char for str2
-	unpack_stack()
-	pack_stack()
 	jal length2Char	# call length2char for str2
-	unpack_stack()
 	move $s2, $v0
 	move $a0, $s0
-	pack_stack()
 	jal toUpper
-	unpack_stack()
 	move $s0, $v0
 	li $t0, 0
 	
@@ -475,6 +459,7 @@ createKey:
 	createKeyDone:
 		li $t1, '\0'
 		sb $t1, 0($t5)
+		unpack_stack()
 		jr $ra
 
 keyIndex:
@@ -487,6 +472,7 @@ keyIndex:
 	# s3 = add + off MCA
 	# s5 = loop counter / key index, -1 if not found
 	# s7 = return address
+	pack_stack()
 	move $s0, $a0
 	la $s1, FMorseCipherArray
 	li $s2, 0
@@ -496,16 +482,12 @@ keyIndex:
 		add $s3, $s1, $s2
 		move $a0, $s0
 		move $a1, $0
-		pack_stack()
 		jal length2Char
-		unpack_stack()
 		blt $v0, 3, notFound
 		move $a0, $s0
 		move $a1, $s3
 		li $a2, 3
-		pack_stack()
 		jal strcmp
-		unpack_stack()
 		beq $v1, 1, doneKeyIndex
 		beq $v1, 0, notFound
 		returnKeyIndexLoop:
@@ -522,6 +504,7 @@ keyIndex:
 		b keyIndexReturn
 	
 	keyIndexReturn:
+		unpack_stack()
 		jr $ra
 	
 
