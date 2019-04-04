@@ -272,7 +272,6 @@ toMorse:
 	move $s0, $a0
 	move $s1, $a1						#
 	move $s2, $a2						#
-
 	
 	li $s6, 1							#
 	blt $a2, 1, invalidEntry			#
@@ -318,7 +317,6 @@ toMorse:
 		move $s4, $v0					# move new s1 offset back in
 		beq $s4, -1, unfinished
 		b returnFromAddX
-		
 		
 	invalidEntry:						#
 		li $v0, 0						#
