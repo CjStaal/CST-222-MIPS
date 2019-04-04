@@ -9,10 +9,10 @@
 ##############################
 # PART 1 FUNCTIONS 
 ##############################
-# pack it, stuff stack with jump and $s register data
+
 .macro pack_stack()
-	subi $sp, $sp, 36 # 9 (items) * 4 (width)
-	sw $ra, 0($sp) # 0 ->
+	subi $sp, $sp, 36
+	sw $ra, 0($sp)
 	sw $s7, 4($sp)
 	sw $s6, 8($sp)
 	sw $s5, 12($sp)
@@ -20,12 +20,11 @@
 	sw $s3, 20($sp)
 	sw $s2, 24($sp)
 	sw $s1, 28($sp)
-	sw $s0, 32($sp) # -> 36
+	sw $s0, 32($sp)
 .end_macro
 
-# unpack the stack, roll it back to original content
 .macro unpack_stack()
-	lw $ra, 0($sp) # 0 ->
+	lw $ra, 0($sp)
 	lw $s7, 4($sp)
 	lw $s6, 8($sp)
 	lw $s5, 12($sp)
@@ -33,8 +32,8 @@
 	lw $s3, 20($sp)
 	lw $s2, 24($sp)
 	lw $s1, 28($sp)
-	lw $s0, 32($sp) # -> 36
-	addi $sp, $sp, 36 # 9 (items) * 4 (width)
+	lw $s0, 32($sp)
+	addi $sp, $sp, 36
 .end_macro
 
 toUpper:
@@ -99,7 +98,6 @@ strcmp:
 	# v0 = number of matching characters
 	# v1 = if strings matched, 1, otherwise 0
 
-	#Save registers
 	pack_stack()
 	
 	move $s0, $a0						# save str1 to s0
@@ -185,6 +183,8 @@ ammendString:
 	# t4 = byte to be added to a0
 	# t5 = a3 - 1. for a0 index 
 	# v0 = new a3, or -1 if filled and wasn't able to finish 
+	
+	pack_stack()
 	move $t2, $a2						#
 	li $t3, 0							# gotta zero it out so I'm not a dumbass
 	
@@ -201,10 +201,12 @@ ammendString:
 	
 	stringFull:
 		li $v0, -1						# Lets let them know where we are full on the destination string via v1
+		unpack_stack()
 		jr $ra							# jump wit it
 	
 	finishedAmmend:
 		move $v0, $t2					# let them know this is where we are on the destination string
+		unpack_stack()
 		jr $ra							# jump wit it
 		
 morseLookup:
@@ -212,6 +214,7 @@ morseLookup:
 	# v0 = address of morse string
 	# v1 = 1 if found, otherwise 0
 	# t0 = address of base array
+	
 	la $t2, MorseCode					#
 	beq $a0, 32, isaspace
 	blt $a0, 33, notfound				# Make sure the char is in range
@@ -267,7 +270,6 @@ toMorse:
 	# v0 = return length of morse code, including '\0'
 	# v1 = returns 1 if string was completely and correctly encoded, otherwise 0
 	
-	# save registers
 	pack_stack()
 	move $s0, $a0
 	move $s1, $a1						#
@@ -381,7 +383,8 @@ createKey:
 	# t6 = address + offset ( t2) checkArray
 	# t7 = index for output
 	# v0 = address of CheckArray
-	# v1 = char from CheckArray
+	# v1 = char from CheckArray 
+	
 	pack_stack()
 	move $s0, $a0
 	move $s1, $a1
@@ -445,15 +448,15 @@ createKey:
 		jr $ra
 
 keyIndex:
-	# a0/s0 = address of phrase
-	# v0 = key index
-	
-	# s0 = address of phrase
+	# s0/a0 = address of phrase
 	# s1 = address of FMorseCipherArray
 	# s2 = offset of FMorseCipherArray
 	# s3 = add + off MCA
 	# s5 = loop counter / key index, -1 if not found
 	# s7 = return address
+	
+	# v0 = key index
+	
 	pack_stack()
 	move $s0, $a0
 	la $s1, FMorseCipherArray
@@ -491,16 +494,18 @@ keyIndex:
 		jr $ra
 	
 
+
 FMCEncrypt:
-	# s0 = address of cipherText
-	# s1 = address of phrase
-	# s2 = address of encryptBuffer
-	# s3 = encryptBufferSize
-	# s4 = offset for MorsedMsg
-	# s5 = add + offset for EncryptBuffer
-	# s6 = counter
-	# v0 = address of encryptBuffer
-	# v1 = 1 if completely encoded, otherwise 0
+	#Saves the return address and saved registers
+	# s0 = address of message
+	# s1 = address of phrase to create keyPhrase
+	# s2 = address of encryption buffer
+	# s3 = size of encryption buffer
+	# s4 = counter for address in morsebuffer
+	# s5 = incremental address for encryptbuffer
+	# s6 = loop counter
+	# v0 = address of encryption buffer
+	# v1 = 1 if complete and correct encoding, otherwise 0
 	
 	pack_stack()
 	move $s0, $a0
@@ -508,62 +513,70 @@ FMCEncrypt:
 	move $s2, $a2
 	move $s3, $a3
 	
-	move $a0, $s0
+	addi $s3, $s3, -1
+	li $s4, 0		
+	move $s5, $s2
+	li $s6, 0	
 	
-	la $a1, MorsedMsg
-	li $a2, 404
+	la $a1, morseBuffer	
+	li $a2, 800		
 	jal toMorse
+	move $t0, $v1
+	beqz $t0, fmceError	
 	
 	move $a0, $s1
-	la $a1, keyPhrase
+	la $a1, keyBuffer
 	jal createKey
 	
-	li $s4, 0
-	move $s5, $s2
-	li $s6, 0
 	
-	encryptLoop:
-		la $t3, MorsedMsg($s4)
-		# load the three bytes
-		lb $t0, 0($t3)
-		lb $t1, 1($t3)
-		lb $t2, 2($t3)
+	morseEncryptLoop:
+		la $t3, morseBuffer($s4)
+	
+		b checkForEnd
+		returnFromCheckForEnd:
 		
-		beqz $t0, fmcEnd
-		beqz $t1, fmcEnd
-		beqz $t2, fmcEnd
+		beq $s6, $s3, fmceError		
 		
-		beq $s6, $s3, fmcError
-		
-		la $a0, MorsedMsg($s4)
+		la $a0, morseBuffer($s4)
 		jal keyIndex
 		
-		beq $v0, -1, fmcError
+		move $t0, $v0
+		beq $t0, -1, fmceError	
 		
-		lb $t1, keyPhrase($t0)
+		lb $t1, keyBuffer($t0)
 		sb $t1, ($s5)
 		
-		addi $s4, $s4, 3
+		addi $s4, $s4, 3	
 		addi $s5, $s5, 1
 		addi $s6, $s6, 1
-		j encryptLoop
-		
-	fmcEnd:
+		j morseEncryptLoop
+	
+	checkForEnd:
+		lb $t0, 0($t3)	
+		lb $t1, 1($t3)
+		lb $t2, 2($t3)
+		beqz $t0, fmceEnd	
+		beqz $t1, fmceEnd
+		beqz $t2, fmceEnd
+		b returnFromCheckForEnd
+
+	fmceEnd:
 		move $t0, $0
 		sb $t0, ($s5)
 		move $v0, $s2
 		li $v1, 1
-		b unpackAndLeave
-		
-	fmcError:
-		sb $0, ($s2)
+		j endFMCE
+	
+	fmceError:
+		move $t0, $0
+		sb $t0, ($s5)
 		move $v0, $s2
 		li $v1, -1
-		b unpackAndLeave
-		
-	unpackAndLeave:
-		unpack_stack()
-		jr $ra
+	
+	endFMCE:
+	unpack_stack()
+	
+	jr $ra
 
 ##############################
 # EXTRA CREDIT FUNCTIONS
@@ -584,8 +597,8 @@ fromMorse:
 .data
 MorseCode: .word MorseExclamation, MorseDblQoute, MorseHashtag, Morse$, MorsePercent, MorseAmp, MorseSglQoute, MorseOParen, MorseCParen, MorseStar, MorsePlus, MorseComma, MorseDash, MorsePeriod, MorseFSlash, Morse0, Morse1,  Morse2, Morse3, Morse4, Morse5, Morse6, Morse7, Morse8, Morse9, MorseColon, MorseSemiColon, MorseLT, MorseEQ, MorseGT, MorseQuestion, MorseAt, MorseA, MorseB, MorseC, MorseD, MorseE, MorseF, MorseG, MorseH, MorseI, MorseJ, MorseK, MorseL, MorseM, MorseN, MorseO, MorseP, MorseQ, MorseR, MorseS, MorseT, MorseU, MorseV, MorseW, MorseX, MorseY, MorseZ 
 CheckArray: .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-Space: .asciiz "XX"
-EndChar: .asciiz "X"
+Space: .asciiz "xx"
+EndChar: .asciiz "x"
 MorseExclamation: .asciiz "-.-.--"
 MorseDblQoute: .asciiz ".-..-."
 MorseHashtag: .ascii ""
@@ -644,6 +657,6 @@ MorseW: .asciiz ".--"
 MorseX: .asciiz "-..-"
 MorseY: .asciiz "-.--"
 MorseZ: .asciiz "--.."
-MorsedMsg: .word 404
-keyPhrase: .word 104
 FMorseCipherArray: .asciiz ".....-..x.-..--.-x.x..x-.xx-..-.--.x--.-----x-x.-x--xxx..x.-x.xx-.x--x-xxx.xx-"
+morseBuffer: .space 800
+keyBuffer: .space 26
