@@ -44,13 +44,13 @@ toUpper:
 	# t3 = address of string (can be incremented)
 	# v0 = return value
 	
-	li $t0, 0							# intialize byte counter to zero
+	li $t0, 0						# intialize byte counter to zero
 	move $t3, $a0						# copy over the starting address of the string
 	loopToUpper:						#
 		lb $t1, 0($t3)					# load byte to be manipulated
-		beq $t1, '\0' doneToUpper		# if a null bit, we are at the end of the string
-		blt $t1, 'a', endofloopToUpper	# if char is less than 97 skip it
-		bgt $t1, 'z', endofloopToUpper	# or if char is greater than 122 skip it
+		beq $t1, '\0' doneToUpper			# if a null bit, we are at the end of the string
+		blt $t1, 'a', endofloopToUpper			# if char is less than 97 skip it
+		bgt $t1, 'z', endofloopToUpper			# or if char is greater than 122 skip it
 		and $t1, $t1, '_'				# clear 5th bit
 		sb $t1, 0($t3)					# store manipulated byte
 		endofloopToUpper:				#
@@ -58,7 +58,7 @@ toUpper:
 		b loopToUpper					#
 	doneToUpper:						#
 	move $v0, $a0						# move final value to return value
-	jr $ra								# return to main
+	jr $ra							# return to main
 
 length2Char:
 	# v0 = counter/ strlength
@@ -68,19 +68,19 @@ length2Char:
 	# t2 = terminator char
 	# v0 = length to be returned
 	
-	li $v0, 0							#
+	li $v0, 0						#
 	beqz $a1, a1null					#
 	lb $t2, 0($a1)						#
 	loopLength2Char:					#
 		lb $t0, 0($a0)					# load char
-		beq $t0, $t2, doneLength2Char	# if char = terminator
-		beq $t0, $0, doneLength2Char	# or if we reach the EOS
+		beq $t0, $t2, doneLength2Char			# if char = terminator
+		beq $t0, $0, doneLength2Char			# or if we reach the EOS
 		addi $v0, $v0, 1				# increase counter
 		addi $a0, $a0, 1				# go to next byte
 		b loopLength2Char				#
 	doneLength2Char:					#
-	jr $ra								#
-	a1null:								#
+	jr $ra							#
+	a1null:							#
 		move $t2, $0					#
 		b loopLength2Char				#
 
@@ -103,7 +103,7 @@ strcmp:
 	move $s0, $a0						# save str1 to s0
 	move $s1, $a1						# save str2 to s1
 	
-	li $a1, 0							# set null terminator for length2char
+	li $a1, 0						# set null terminator for length2char
 	jal length2Char						# call length2char for str2
 	move $s2, $v0						# move return value to t2
 	
@@ -116,16 +116,16 @@ strcmp:
 	bgt $a2, $s3, error					# if length is greater than length of string2, return 0,0
 	
 	# initialize the things=
-	li $v0, 0							#
-	li $v1, 1							#
+	li $v0, 0						#
+	li $v1, 1						#
 
 	beqz $a2, a2isZero					# if a2 is zero, find out if strings are equal, if not, find the difference and add that to v1, and set v0 to 0
 	
-	strCmpLoop:							#
-		beqz $a2, done				# it is done once we get to the end of the strings
+	strCmpLoop:						#
+		beqz $a2, done					# it is done once we get to the end of the strings
 		lb $t0, 0($s0)					# load up that there byte from string 1
 		lb $t1, 0($s1)					# load up that there byte from string 2
-		bne $t0, $t1, different			# Are they equal? If not lets go down to label different
+		bne $t0, $t1, different				# Are they equal? If not lets go down to label different
 		add $v0, $v0, 1					# Seems like they're equal. Lets increment 'same' counter
 		returntoLoop:					#
 		addi $s0, $s0, 1
@@ -135,35 +135,35 @@ strcmp:
 		
 		
 	# if one string is larger than the other, add the difference to the amount of different chars and set v0 to 0
-	a2isZero:							#
-		bne $s2, $s3, strDiffSize		# if the strings are a different size, branch
+	a2isZero:						#
+		bne $s2, $s3, strDiffSize			# if the strings are a different size, branch
 		move $a2, $s2					# else it's the same size, so lets just make the length one of the lengths of the two strings
 		b strCmpLoop					# hop on back now ya'll
 	
 	
 	strDiffSize:						#
-		li $v1, 0						# Well we know they don't match already there partna'
+		li $v1, 0					# Well we know they don't match already there partna'
 		blt $s2, $s3, t2Lt3				# Lets save whichever one is lower in to s2
 		move $a2, $s3					# right now I guess s3 is lower
 		b strCmpLoop					#
 	
-	t2Lt3:								#
+	t2Lt3:							#
 		move $a2, $s2					# right now s2 is lower 
 		b strCmpLoop					#
 	
 	
-	error:								#
-		li $v0, 0						#
-		li $v1, 0						#
-		b done							#
-		
-	different:							#
-		li $v1, 0						# They're different. Sound the alarm in v1
+	error:							#
+		li $v0, 0					#
+		li $v1, 0					#
+		b done						#
+
+	different:						#
+		li $v1, 0					# They're different. Sound the alarm in v1
 		b returntoLoop					#
 		
-	done:								#
-		unpack_stack()
-		jr $ra							# hop on back
+	done:							#
+		unpack_stack()					#
+		jr $ra						# hop on back
 
 
 ##############################
@@ -186,28 +186,28 @@ ammendString:
 	
 	pack_stack()
 	move $t2, $a2						#
-	li $t3, 0							# gotta zero it out so I'm not a dumbass
+	li $t3, 0						# gotta zero it out so I'm not a dumbass
 	
 	ammendLoop:
 		add $t0, $a0, $t2				# address + offset for a0, destination string
 		add $t1, $a1, $t3				# address + offset for a1, source string
 		lb $t4, 0($t1)					# load the byte from the source string 
-		beq $t2, $a3, stringFull		# if the index of the destination string is the size of the destination string, we are full (since we are really above the index by 1)
-		beq $t4, '\0', finishedAmmend	# if the character we just grabbed from the source string is null, we are done
+		beq $t2, $a3, stringFull			# if the index of the destination string is the size of the destination string, we are full (since we are really above the index by 1)
+		beq $t4, '\0', finishedAmmend			# if the character we just grabbed from the source string is null, we are done
 		sb $t4, 0($t0)					# store the character from the source string to the destination string
 		addi $t2, $t2, 1				# increment index for destination string
 		addi $t3, $t3, 1				# increment index for source string
 		b ammendLoop					# lets keep it movin'
 	
 	stringFull:
-		li $v0, -1						# Lets let them know where we are full on the destination string via v1
+		li $v0, -1					# Lets let them know where we are full on the destination string via v1
 		unpack_stack()
-		jr $ra							# jump wit it
+		jr $ra						# jump wit it
 	
 	finishedAmmend:
 		move $v0, $t2					# let them know this is where we are on the destination string
 		unpack_stack()
-		jr $ra							# jump wit it
+		jr $ra						# jump wit it
 		
 morseLookup:
 	# a0 = character to be looked up
@@ -217,23 +217,23 @@ morseLookup:
 	
 	la $t2, MorseCode					#
 	beq $a0, 32, isaspace
-	blt $a0, 33, notfound				# Make sure the char is in range
-	bgt $a0, 90, notfound				#
+	blt $a0, 33, notfound					# Make sure the char is in range
+	bgt $a0, 90, notfound					#
 	sub $a0, $a0, 33					# subtract 33 so now we are indexed in to the MorseCode array
 	sll $a0, $a0, 2						#
-	lw $v0, MorseCode($a0)				#
-	li $v1, 1							# toggle showing that we have it
-	jr $ra								#
+	lw $v0, MorseCode($a0)					#
+	li $v1, 1						# toggle showing that we have it
+	jr $ra							#
 	
 	isaspace:
-		la $v0, Space
-		li $v1, 1
-		jr $ra
+		la $v0, Space					#
+		li $v1, 1					#
+		jr $ra						#
 		
-	notfound:							#
-		li $v0, 0						#
-		li $v1, 0						#
-		jr $ra							#
+	notfound:						#
+		li $v0, 0					#
+		li $v1, 0					#
+		jr $ra						#
 
 zeroCheckArray:
 	la $t0, CheckArray
@@ -275,19 +275,19 @@ toMorse:
 	move $s1, $a1						#
 	move $s2, $a2						#
 	
-	li $s6, 1							#
-	blt $a2, 1, invalidEntry			#
+	li $s6, 1						#
+	blt $a2, 1, invalidEntry				#
 	lb $t4, 0($s0)
-	beq $t4 '\0', endToMorse
+	beq $t4 '\0', endToMorse				#
 	
-	li $s3, 0							#
-	li $s4, 0							#
+	li $s3, 0						#
+	li $s4, 0						#
 	
 	toMorseLoop:						#
-		beq $s4, $s2, filled			#
+		beq $s4, $s2, filled				#
 		add $t0, $s0, $s3				#
 		lb $s5, 0($t0)					# character from source string to be encoded
-		beq $s5, '\0', finishedCorrectly#
+		beq $s5, '\0', finishedCorrectly		#
 		move $a0, $s5					# move that character in to argument 0
 		jal morseLookup
 		beq $v1, 0, skip				# if it returned 0 in v1, that means there is no morse for that character, so skip it
@@ -301,7 +301,7 @@ toMorse:
 		bne $s5, ' ', addX
 		returnFromAddX:
 		beq $s2, $s4, filled
-		skip:							#
+		skip:						#
 		addi $s3, $s3, 1				# increment the offset/index for the source string
 		b toMorseLoop					#
 
@@ -321,11 +321,12 @@ toMorse:
 		b returnFromAddX
 		
 	invalidEntry:						#
-		li $v0, 0						#
-		li $v1, 0						#
-		jr $ra							#
+		unpack_stack()
+		li $v0, 0					#
+		li $v1, 0					#
+		jr $ra						#
 		
-	unfinished:							#
+	unfinished:						#
 		li $s6, 0
 		sub $s2, $s2, 1
 		add $t1, $s1, $s2
@@ -349,20 +350,20 @@ toMorse:
 		sb $0, 0($t1)
 		b endToMorse
 		
-	filled:								#
+	filled:							#
 		add $t0, $s0, $s3				#
 		lb $t4, 0($t0)					#
 		beq $t4, '\0', finishedCorrectly#
 		b endToMorse					#
 
-	endToMorse:							#
+	endToMorse:						#
 		move $a0, $s1
 		move $a1, $0
 		jal length2Char
 		add $v0, $v0, 1					# because he wants the length INCLUDING the null? wtf?
 		move $v1, $s6
 		unpack_stack()
-		jr $ra							#
+		jr $ra						#
 
 	
 createKey:
@@ -403,41 +404,41 @@ createKey:
 	createKeyLoop:
 		add $s3, $s0, $t0				# base address + offset/index for phrase
 		add $t5, $s1, $t7				# base address + offset/index for output
-		beq $t0, $s2, fillit			# if the index is larger or equal to the size of the phrase, go back and fill the rest of the letters in
+		beq $t0, $s2, fillit				# if the index is larger or equal to the size of the phrase, go back and fill the rest of the letters in
 		lb $t1, 0($s3)					# obtain the character from the phrase
 		blt $t1, 41, returnToKeyLoop
 		bgt $t1, 90, returnToKeyLoop
 		subi $t2, $t1, 65				# minus 65 from character to get index of the character in CheckArray
 		add $t6, $t3, $t2				# Index for char in CheckArray
 		lb $t4, 0($t6)					# Load the characters boolean byte from CheckArray
-		beqz $t4, addToOutput			# if the characters boolean is 0, add it to output
+		beqz $t4, addToOutput				# if the characters boolean is 0, add it to output
 		returnToKeyLoop:
 		addi $t0, $t0, 1				# else increment the index/counter
 		b createKeyLoop
 		
 	addToOutput:
 		sb $t1, 0($t5)					# Add char from phrase to the output phrase
-		li $t4, 1						# load 1 to char from check array
+		li $t4, 1					# load 1 to char from check array
 		sb $t4, 0($t6)					# add 1 to check array
 		addi $t7, $t7, 1 				# increment the output index
 		b returnToKeyLoop
 		
 	addToOutput2:
 		sb $t1, 0($t5)					# Add char to the output phrase
-		li $t4, 1						# load 1 to char from check array
+		li $t4, 1					# load 1 to char from check array
 		sb $t4, 0($t6)					# add 1 to check array
 		addi $t7, $t7, 1 				# increment the output 
 		b fillitLoop
 		
 	fillit:
-		li $t1, 41						# Load A in to character register
+		li $t1, 41					# Load A in to character register
 		fillitLoop:
 		add $t5, $s1, $t7				# base address + offset/index for output
-		beq $t1, 91, createKeyDone		# If we are passed Z, we are done
+		beq $t1, 91, createKeyDone			# If we are passed Z, we are done
 		subi $t2, $t1, 65				# minus 65 from character to get index of the character in CheckArray
 		add $t6, $t3, $t2				# Index for char in CheckArray
 		lb $t4, 0($t6)					# Load the characters boolean byte from CheckArray
-		beqz $t4, addToOutput2			# if the characters boolean is 0, add it to output
+		beqz $t4, addToOutput2				# if the characters boolean is 0, add it to output
 		addi $t1, $t1, 1
 		b fillitLoop
 			
@@ -571,7 +572,7 @@ FMCEncrypt:
 		move $t0, $0
 		sb $t0, ($s5)
 		move $v0, $s2
-		li $v1, -1
+		li $v1, 0
 	
 	endFMCE:
 	unpack_stack()
