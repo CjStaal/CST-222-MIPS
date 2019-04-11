@@ -369,9 +369,9 @@ set_adj_bomb:
 		addi $t0, $t0, -1			# decrement the row coord/counter
 		b mult_loop				# Go to the beginning of the mult loop
 	mult_done:					# We have the row coord now
-	la $t3, Cell_Array				# We haave the address
+	la $t3, Cell_Array				# We have the address
 	addi $t2, $t2, $t1				# We have the starting row + starting column coord
-
+	
 	row_loop:
 		column_loop:
 			bltz 
