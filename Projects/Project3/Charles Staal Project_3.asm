@@ -109,6 +109,7 @@
 	sw $s7, 48($sp)
 	sw $fp, 54($sp)
 	sw $ra, 56($sp)
+.end_macro
 
 .macro pop_all_stack()
 	lw $ra, 0($sp)
@@ -126,6 +127,7 @@
 	lw $a1, 52($sp)
 	lw $a0, 56($sp)
 	addi $sp, $sp, 64
+.end_macro
 
 #################################################################
 # PART 1 FUNCTIONS
@@ -241,7 +243,7 @@ load_map:
 	li $s1, 0						# s1 will be the cell location/offset of the cell array
 
 	move $a0, $v0						# v0 contains file descriptor, so move to a0
-	li $v0, READ_FILE					# Set the syscall to read from file
+	li $v0, READ_FROM_FILE					# Set the syscall to read from file
 	la $a1, File_Buffer					# a1 is the address of the input buffer
 	li $a2, MAX_BUFFER_SIZE					# Bytes to be read
 	syscall							# Calls the function to read the file in to the buffer
@@ -279,7 +281,7 @@ load_map:
 
 		increment_map_address:				#
 			addi, $s3, $s3, 1			# Increment the address of the file buffer
-		b load_map_loop:				# Return to the start of the loop
+		b load_map_loop					# Return to the start of the loop
 
 	invalid_case:						#
 		li $v0, -1					# Load -1 in to return value so on return we know it failed
@@ -347,7 +349,7 @@ set_bomb:
 		b mult_loop					# Go to the beginning of the mult loop
 	mult_done:						#
 
-	addi $t2, $t2, $t1					# Add column coord to the cell array address
+	add $t2, $t2, $t1					# Add column coord to the cell array address
 	sb $t3, 0($t2)						# Store the bomb info to the address
 	jal set_adj_bomb					# Set adjacent cells to show distance to bomb
 
@@ -379,7 +381,7 @@ set_adj_bomb:
 			return_to_column_loop:			# This is where the branch returns to
 			addi $t4, $t4, 1			# Increment column counter
 			b column_loop				# Return to start of column counter loop
-		return_to_row_loop				# This is where we return to when column counter = 3
+		return_to_row_loop:				# This is where we return to when column counter = 3
 		addi $t3, $t3, 1				# Increment row counter
 		li $t4, 0					# Reset column counter
 		b row_loop					# Return to beginning of row loop
@@ -419,5 +421,5 @@ set_adj_bomb:
 .align 2
 Cursor_Row: .word -1
 Cursor_Col: .word -1
-Cell_Array: .byte MAX_CELLS
-File_Buffer .byte MAX_BUFFER_SIZE
+Cell_Array: .space MAX_CELLS
+File_Buffer: .space MAX_BUFFER_SIZE
