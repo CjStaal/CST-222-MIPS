@@ -266,8 +266,6 @@ load_map:
 			addi $a1, $a1, CHAR_TO_INT_VALUE	# Minus the offset to bring it to its true value
 			addi $s5, $s5, -1			# Minus 1 from the toggle so it's zero now and we will deal with a row when we are back
 			jal set_bomb				# Go to the function to set up the bomb
-			nop					#
-			jal set_adjacent_bomb			# Go to the function to toggle around the bomb
 
 		increment_map_address:				#
 			addi, $s3, $s3, 1			# Increment the address of the file buffer
