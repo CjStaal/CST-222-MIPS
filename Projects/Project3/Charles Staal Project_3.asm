@@ -357,25 +357,58 @@ set_bomb:
 set_adj_bomb:
 	# a0/t0 = Row coord
 	# a1/t1 = Column coord
-	# t
-	move $t0, $a0
-	move $t1, $a1
+	# t2 = Address of cell array
+	# t3 = Row counter
+	# t4 = Column counter
+	# t5 = Row coord + row counter
+	# t6 = Column coord + column counter
+	move $t0, $a0						# Move row coord to t0
+	move $t1, $a1						# Move column cord to t1
 
-	addi $t0, $a0, -1
-	addi $t1, $a1, -1
-	mult_loop:					#
-		beqz $t0, mult_done			# If t0 = 0, we are done multiplying
-		addi $t2, $t2, 10			# Add 10 to the cell array to move to next row
-		addi $t0, $t0, -1			# decrement the row coord/counter
-		b mult_loop				# Go to the beginning of the mult loop
-	mult_done:					# We have the row coord now
-	la $t3, Cell_Array				# We have the address
-	addi $t2, $t2, $t1				# We have the starting row + starting column coord
-	
-	row_loop:
-		column_loop:
-			bltz 
-	jr $ra
+	addi $t0, $a0, -1					#
+	addi $t1, $a1, -1					#
+	li $t3, 0						#
+	li $t4, 0						#
+	row_loop:						#
+		beq $t3, 3, set_adj_bomb_finished		#
+		column_loop:					#
+			beq $t4, 3, return_to_row_loop		#
+			b add_info				#
+			return_to_column_loop:			#
+			addi $t4, $t4, 1			#
+			b column_loop				#
+		return_to_row_loop				#
+		addi $t3, $t3, 1				#
+		li $t4, 0					#
+		b row_loop					#
+	row_loop_end:						#
+
+	add_info:						#
+		add $t5, $t0, $t3				#
+		add $t6, $t1, $t4				#
+		bltz $t5, return_to_row_loop			#
+		bltz $t6, return_to_column_loop			#
+		bgt $t5, 9, return_to_row_loop			#
+		bgt $t6, 9, return_to_column_loop		#
+		la $t2, Cell_Array				#
+		add $t2, $t2, $t6				#
+
+		mult_loop2:					#
+			beqz $t5, mult_done2			#
+			addi $t2, $t2, 10			#
+			addi $t5, $t5, -1			#
+			b mult_loop2				#
+		mult_done2:					#
+
+		lb $t7, 0($t2)					#
+		beq $t7, CONT_BOMB, return_to_column_loop	#
+		addi $t7, $t7, ADJ_BOMB				#
+		sb $t7, 0($t2)					#
+		b return_to_column_loop				#
+	add_info_end:						#
+
+	set_adj_bomb_finished:					#
+		jr $ra						# Return to previous address
 #################################################################
 # Student defined data section
 #################################################################
