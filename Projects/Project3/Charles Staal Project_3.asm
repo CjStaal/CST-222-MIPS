@@ -71,14 +71,14 @@ smiley:
 	# t2 = Color of cell background (high bits) and foreground (low bits)
 
 	li $t0, STARTING_ADDRESS			# The starting address of the cells
-	li $t1, '\0'			# t1 will be used for icon
-	li $t2, 15			# t2 will be used for color
+	li $t1, DEFAULT_CELL_ICON			# t1 will be used for icon
+	li $t2, DEFAULT_CELL_COLOR			# t2 will be used for color
 	li $t3, 0					# Counter will start at zero and go until it reaches 200
 
 	map_default_loop:
 		beq $t3, 200, default_map_done		# There are two hundred bytes in the map and we must go through them all
 		sb $t1, 0($t0)				# The first byte stores the icon
-		sb $t2, 1($t0)
+		sb $t2, 1($t0)				# The second byte stores the color
 		addi $t0, $t0, 2			# We must increment by two since we are modifying two bytes each
 		addi $t3, $t3, 2			# Same as above
 		b map_default_loop
@@ -88,9 +88,9 @@ smiley:
 	li $t0, STARTING_ADDRESS			# t0 will be starting address
 	
 	# We are setting the eyes
+	li $t1, BOMB					# The eyes will have a bomb icon
 	li $t2, YELLOW_BACKGROUND			# The eyes will have a yellow background color
 	addi $t2, $t2, GRAY_FOREGROUND			# The eyes will have gray as foreground color
-	li $t1, BOMB					# The eyes will have a bomb icon
 
 	sb $t1, 46($t0)					# First coord is ((2*20)+(3*2)) + starting address
 	sb $t2, 47($t0)					# The byte right after is the color for said cell
@@ -106,9 +106,9 @@ smiley:
 	# Finished setting eyes
 
 	# We are setting the mouth
+	li $t1, EXPLOSION				# The smile will have an explosion icon
 	li $t2, RED_BACKGROUND				# The smile will have a red background
 	addi $t2, $t2, WHITE_FOREGROUND			# The smile will have a white foreground
-	li $t1, EXPLOSION				# The smile will have an explosion icon
 
 	sb $t1, 124($t0)				# First coord is ((6*20)+(2*2)) + starting address
 	sb $t2, 125($t0)				# The byte right after is the color for said cell
