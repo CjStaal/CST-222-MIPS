@@ -30,17 +30,17 @@ main:
 	# save the file descriptor that was returned
 	move	$s0,	$v0
 	bltz	$s0,	invalid_file_error
-
+	
 	# load the map from the file we opened
 	move	$a0,	$s0
 	la	$a1,	cells_array
 	jal	load_map
 	bltz	$v0,	invalid_file_error
-
+	
 	# close the file
 	move	$a0,	$s0
 	jal	close_file
-
+	
 	# set the display to all covered and init the cursor
 	jal	init_display
 
@@ -96,4 +96,4 @@ main:
 	li	$v0,	10
 	syscall
 
-.include "hw3.asm"
+.include "Charles Staal Project_3.asm"
