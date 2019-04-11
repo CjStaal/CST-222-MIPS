@@ -61,11 +61,34 @@
 .eqv DEFAULT_CELL_COLOR 15
 .eqv DEFAULT_CELL_ICON 0
 
+# Maximum amount of cells
+.eqv MAX_CELLS 100 
+
+# Syscalls
+.eqv PRINT_INTEGER 1
+.eqv PRINT_STRING 4
+.eqv READ_INTEGER 5
+.eqv READ_STRING 8
+.eqv EXIT_PROGRAM 10
+.eqv PRINT_CHARACTER 11
+.eqv READ_CHARACTER 12
+.eqv OPEN_FILE 13
+.eqv READ_FROM_FILE 14
+.eqv WRITE_TO_FILE 15
+.eqv CLOSE_FILE 16
+
 ##############################
 # PART 1 FUNCTIONS
 ##############################
-
+.globl main
+main:
+	jal smiley
+	nop
+	li $v0, 10
+	syscall
+	
 smiley:
+	# There are no arguments for this function
 	# t0 = Starting address
 	# t1 = icon of cell
 	# t2 = Color of cell background (high bits) and foreground (low bits)
@@ -73,14 +96,14 @@ smiley:
 	li $t0, STARTING_ADDRESS			# The starting address of the cells
 	li $t1, DEFAULT_CELL_ICON			# t1 will be used for icon
 	li $t2, DEFAULT_CELL_COLOR			# t2 will be used for color
-	li $t3, 0					# Counter will start at zero and go until it reaches 200
+	li $t3, MAX_CELLS				# Counter will start at MAX_CELLS and go until it reaches 0
 
 	map_default_loop:
-		beq $t3, 200, default_map_done		# There are two hundred bytes in the map and we must go through them all
+		beqz $t3, MAX_CELLS, default_map_done	# There are two hundred bytes in the map and we must go through them all
 		sb $t1, 0($t0)				# The first byte stores the icon
 		sb $t2, 1($t0)				# The second byte stores the color
 		addi $t0, $t0, 2			# We must increment by two since we are modifying two bytes each
-		addi $t3, $t3, 2			# Same as above
+		addi $t3, $t3, -1			# Same as above
 		b map_default_loop
 
 	default_map_done:
@@ -139,18 +162,26 @@ open_file:
 	# a0 = filename
 	li $a1, 0
 	li $a2, 0
-	li $v0, 13
+	li $v0, OPEN_FILE
 	syscall
 
 	jr $ra
 
 close_file:
-	li $v0, 16
+	# There are no arguments for this function
+	li $v0, CLOSE_FILE
 	syscall
 
 	jr $ra
 
 load_map:
+	# There are no arguments for this functino
+	# s0 = Base address of cell_array
+	# s1 = cell location/offset for cell array
+
+	la $s0, cell_array				# s0 will be the base address of the cell array
+	li $s1, 0					# s1 will be the cell location/offset of the cell array
+
 	jr $ra
 
 ##############################
@@ -187,12 +218,9 @@ search_cells:
 #################################################################
 # Student defined data section
 #################################################################
-main:
-	jal smiley
-	li $v0, 10
-	syscall
+
 .data
 .align 2
 cursor_row: .word -1
 cursor_col: .word -1
-
+cells_array: .byte 100
