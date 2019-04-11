@@ -211,7 +211,7 @@ smiley:
 #################################################################
 
 open_file:
-	# a0 = filename3
+	# a0 = filename
 	li $a1, 0						#
 	li $a2, 0						#
 	li $v0, OPEN_FILE					#
