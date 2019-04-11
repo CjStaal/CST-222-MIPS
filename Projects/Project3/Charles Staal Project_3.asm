@@ -241,6 +241,7 @@ load_map:
 	beq $v0, -1, invalid_case				# If syscall returns a -1, we know there was an error
 
 	li $s5, 0						# Initiates row/column toggle to start with row
+
 	load_map_loop:						#
 		lb $s4, 0($s3)					# Load byte in to s4 from cell array
 		beq $s4, ' ', increment_map_address		# If it's a space, increment and go to next byte
@@ -251,22 +252,26 @@ load_map:
 		bgt $s4, '9', invalid_case			# If it's higher than a '9' it's invalid now too
 		beq $s5, 1, column_load				# If it's toggled 1, we are dealing with a column
 		b row_load					# Else we are dealing with a row
+
 		row_load:					#
 			beqz $s4, load_map_full_load		# If it's null, and dealing with a row, we are done
 			move $a0, $s4				# Move the byte to the register for the row
 			addi $a0, $a0, CHAR_TO_INT_VALUE	# Minus the offset to bring it to it's true value
 			addi $s5, $s5, 1			# Increment the toggle so we are dealing with a column now
 			b increment_map_address			# Go to the part of the loop where we increment the file buffer address
+
 		column_load:					#
 			beqz $s4, invalid_case			# If we are at end of file, while dealing with a column, we are missing a coord so it is wrong
 			move $a1, $s4				# Move the char to the column register
 			addi $a1, $a1, CHAR_TO_INT_VALUE	# Minus the offset to bring it to its true value
 			addi $s5, $s5, -1			# Minus 1 from the toggle so it's zero now and we will deal with a row when we are back
 			jal set_bomb				# Go to the function to set up the bomb
+			nop					#
+			jal set_adjacent_bomb			# Go to the function to toggle around the bomb
+
 		increment_map_address:				#
-		addi, $s3, $s3, 1				# Increment the address of the file buffer
+			addi, $s3, $s3, 1			# Increment the address of the file buffer
 		b load_map_loop:				# Return to the start of the loop
-	load_map_loop_end:					#
 
 	invalid_case:						#
 		li $v0, -1					# Load -1 in to return value so on return we know it failed
@@ -310,6 +315,19 @@ game_status:
 
 search_cells:
 	jr $ra
+
+#################################################################
+# PART 6 STUDENT DEFINED FUNCTIONS
+#################################################################
+
+set_bomb:
+	# a0 = Row coord
+	# a1 = Column coord
+	# s0 = Offset to the starting address (then will be offset + STARTING_ADDRESS)
+	# s1 = Color
+
+	
+toggle_adjacent_bomb_cells:
 
 #################################################################
 # Student defined data section
