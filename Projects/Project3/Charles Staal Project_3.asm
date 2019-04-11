@@ -1,8 +1,8 @@
-##############################################################
+#################################################################
 # Homework #3
 # name: Charles Staal
 # scccid: 01040168
-##############################################################
+#################################################################
 
 .text
 
@@ -88,9 +88,9 @@
 .eqv WRITE_TO_FILE 15
 .eqv CLOSE_FILE 16
 
-##############################
+#################################################################
 # PART 0 MACROS
-##############################
+#################################################################
 
 # Going by http://www.cs.ucsb.edu/~franklin/64/resources/spim/BookCallConvention.htm
 .macro push_all_stack()
@@ -127,9 +127,9 @@
 	lw $a0, 56($sp)
 	addi $sp, $sp, 64
 
-##############################
+#################################################################
 # PART 1 FUNCTIONS
-##############################
+#################################################################
 .globl main
 main:
 	jal smiley
@@ -206,9 +206,9 @@ smiley:
 
 	jr $ra							# returns to previous address
 
-##############################
+#################################################################
 # PART 2 FUNCTIONS
-##############################
+#################################################################
 
 open_file:
 	# a0 = filename3
@@ -227,14 +227,14 @@ close_file:
 	jr $ra							#
 
 load_map:
-	# There are no arguments for this functino
+	# There are no arguments for this function
 	# s0 = Base address of cell_array
 	# s1 = cell location/offset for cell array
 	# s2 = counter set at MAX_CELLS and will decrement
 	# s3 = Address of File_Buffer. Will be incremented
 	# s4 = Char from File_Buffer
 	# s5 = Toggle to load in to row or column. If 1 by the time we reach EOF we know there is a coord missing
-
+	# v0 = Returns -1 if error, else returns 0
 	push_all_stack()					# Push the stack to preserve previous registers
 
 	la $s3, Cell_Array					# s0 will be the base address of the cell array
@@ -293,9 +293,9 @@ load_map:
 		pop_all_stack()					# Pop the stack
 		jr $ra						# Return to previous address
 
-##############################
+#################################################################
 # PART 3 FUNCTIONS
-##############################
+#################################################################
 
 init_display:
 	jr $ra
@@ -306,10 +306,9 @@ set_cell:
 reveal_map:
 	jr $ra
 
-
-##############################
+#################################################################
 # PART 4 FUNCTIONS
-##############################
+#################################################################
 
 perform_action:
 	jr $ra
@@ -317,9 +316,9 @@ perform_action:
 game_status:
 	jr $ra
 
-##############################
+#################################################################
 # PART 5 FUNCTIONS
-##############################
+#################################################################
 
 search_cells:
 	jr $ra
@@ -329,6 +328,7 @@ search_cells:
 #################################################################
 
 set_bomb:
+	# This function returns no value
 	# t0/a0 = Row coord
 	# t1/a1 = Column coord
 	# t2 = Offset + address of cell array
@@ -355,8 +355,10 @@ set_bomb:
 	jr $ra							# Return to previous address
 
 set_adj_bomb:
-	# a0/t0 = Row coord
-	# a1/t1 = Column coord
+	# This function returns no value
+	# We do not need to push the stack as this function does not nest another
+	# t0/a0 = Row coord
+	# t1/a1 = Column coord
 	# t2 = Address of cell array
 	# t3 = Row counter
 	# t4 = Column counter
@@ -365,46 +367,46 @@ set_adj_bomb:
 	move $t0, $a0						# Move row coord to t0
 	move $t1, $a1						# Move column cord to t1
 
-	addi $t0, $a0, -1					#
-	addi $t1, $a1, -1					#
-	li $t3, 0						#
-	li $t4, 0						#
+	addi $t0, $a0, -1					# Start above bomb
+	addi $t1, $a1, -1					# Start to left of bomb
+	li $t3, 0						# Set row counter to 0
+	li $t4, 0						# Set column counter to 0
 	row_loop:						#
-		beq $t3, 3, set_adj_bomb_finished		#
+		beq $t3, 3, set_adj_bomb_finished		# If the row counter = 3, then we are finished
 		column_loop:					#
-			beq $t4, 3, return_to_row_loop		#
-			b add_info				#
-			return_to_column_loop:			#
-			addi $t4, $t4, 1			#
-			b column_loop				#
-		return_to_row_loop				#
-		addi $t3, $t3, 1				#
-		li $t4, 0					#
-		b row_loop					#
+			beq $t4, 3, return_to_row_loop		# If the column counter = 3, reset the column counter and increment row counter
+			b add_info				# Branch to add information to cells
+			return_to_column_loop:			# This is where the branch returns to
+			addi $t4, $t4, 1			# Increment column counter
+			b column_loop				# Return to start of column counter loop
+		return_to_row_loop				# This is where we return to when column counter = 3
+		addi $t3, $t3, 1				# Increment row counter
+		li $t4, 0					# Reset column counter
+		b row_loop					# Return to beginning of row loop
 	row_loop_end:						#
 
 	add_info:						#
-		add $t5, $t0, $t3				#
-		add $t6, $t1, $t4				#
-		bltz $t5, return_to_row_loop			#
-		bltz $t6, return_to_column_loop			#
-		bgt $t5, 9, return_to_row_loop			#
-		bgt $t6, 9, return_to_column_loop		#
-		la $t2, Cell_Array				#
-		add $t2, $t2, $t6				#
+		add $t5, $t0, $t3				# Add row coord and row counter
+		add $t6, $t1, $t4				# Add column coord and column counter
+		bltz $t5, return_to_row_loop			# If the row coord now is less than 0, we are off the grid
+		bltz $t6, return_to_column_loop			# If the column coord now is less than 0, we are off the grid
+		bgt $t5, 9, return_to_row_loop			# If the row coord now is more than 9, we are off the grid
+		bgt $t6, 9, return_to_column_loop		# If the column coord now is more than 9, we are off the grid
+		la $t2, Cell_Array				# Load the cell array address in to t2
+		add $t2, $t2, $t6				# Add the cell array address and column coord
 
-		mult_loop2:					#
-			beqz $t5, mult_done2			#
-			addi $t2, $t2, 10			#
-			addi $t5, $t5, -1			#
-			b mult_loop2				#
+		mult_loop2:					# We need to add 10 * row coord to t2
+			beqz $t5, mult_done2			# If t5 is zero, we are done
+			addi $t2, $t2, 10			# Add 10 to t2
+			addi $t5, $t5, -1			# Decrement t5 by 1
+			b mult_loop2				# Return to the start of mult_loop2
 		mult_done2:					#
 
-		lb $t7, 0($t2)					#
-		beq $t7, CONT_BOMB, return_to_column_loop	#
-		addi $t7, $t7, ADJ_BOMB				#
-		sb $t7, 0($t2)					#
-		b return_to_column_loop				#
+		lb $t7, 0($t2)					# Load the byte from the address of cell array
+		beq $t7, CONT_BOMB, return_to_column_loop	# If it is equal to a bomb, don't do anything and return to the column loop
+		addi $t7, $t7, ADJ_BOMB				# Else increment it by 1
+		sb $t7, 0($t2)					# Store the new byte in to the array
+		b return_to_column_loop				# Return to the column loop
 	add_info_end:						#
 
 	set_adj_bomb_finished:					#
