@@ -6,22 +6,38 @@
 .text
 
 # Colors
-.eqv BLACK 0x0000
-.eqv RED 0x0001
-.eqv GREEN 0x0010
-.eqv BROWN 0x0011
-.eqv BLUE 0x0100
-.eqv MAGENTA 0x0101
-.eqv CYAN 0x0110
-.eqv GRAY 0x0111
-.eqv DARK_GRAY 0x1000
-.eqv BRIGHT_RED 0x1001
-.eqv BRIGHT_GREEN 0x1010
-.eqv YELLOW 0x1011
-.eqv BRIGHT_BLUE 0x1100
-.eqv BRIGHT_MAGENTA 0x1101
-.eqv BRIGHT_CYAN 0x1110
-.eqv WHITE 0x1111
+.eqv BLACK_FOREGROUND 0x00000000
+.eqv RED_FOREGROUND 0x00000001
+.eqv GREEN_FOREGROUND 0x00000010
+.eqv BROWN_FOREGROUND 0x00000011
+.eqv BLUE_FOREGROUND 0x00000100
+.eqv MAGENTA_FOREGROUND 0x00000101
+.eqv CYAN_FOREGROUND 0x00000110
+.eqv GRAY_FOREGROUND 0x00000111
+.eqv DARK_GRAY_FOREGROUND 0x00001000
+.eqv BRIGHT_RED_FOREGROUND 0x00001001
+.eqv BRIGHT_GREEN_FOREGROUND 0x00001010
+.eqv YELLOW_FOREGROUND 0x00001011
+.eqv BRIGHT_BLUE_FOREGROUND 0x00001100
+.eqv BRIGHT_MAGENTA_FOREGROUND 0x00001101
+.eqv BRIGHT_CYAN_FOREGROUND 0x00001110
+.eqv WHITE_FOREGROUND 0x00001111
+.eqv BLACK_BACKGROUND 0x00000000
+.eqv RED_BACKGROUND 0x00010000
+.eqv GREEN_BACKGROUND 0x00100000
+.eqv BROWN_BACKGROUND 0x00110000
+.eqv BLUE_BACKGROUND 0x01000000
+.eqv MAGENTA_BACKGROUND 0x01010000
+.eqv CYAN_BACKGROUND 0x01100000
+.eqv GRAY_BACKGROUND 0x01110000
+.eqv DARK_GRAY_BACKGROUND 0x10000000
+.eqv BRIGHT_RED_BACKGROUND 0x10010000
+.eqv BRIGHT_GREEN_BACKGROUND 0x10100000
+.eqv YELLOW_BACKGROUND 0x10110000
+.eqv BRIGHT_BLUE_BACKGROUND 0x11000000
+.eqv BRIGHT_MAGENTA_BACKGROUND 0x11010000
+.eqv BRIGHT_CYAN_BACKGROUND 0x11100000
+.eqv WHITE_BACKGROUND 0x11110000
 
 # Icons
 .eqv ZERO 48
@@ -86,7 +102,7 @@ smiley:
 	li $t3, 0					# Counter will start at zero and go until it reaches 200
 
 	map_default_loop:
-		beq $t3, 400, default_map_done		# There are two hundred bytes in the map and we must go through them all
+		beq $t3, 200, default_map_done		# There are two hundred bytes in the map and we must go through them all
 		sb $t1, 0($t0)				# The first byte stores the color
 		sb $t2, 1($t0)				# The second byte stores the icon
 		addi $t0, $t0, 2			# We must increment by two since we are modifying two bytes each
@@ -98,8 +114,8 @@ smiley:
 	li $t0, STARTING_ADDRESS			# t0 will be starting address
 
 	# We are setting the eyes
-	lui $t1, YELLOW					# The eyes will have a yellow background color
-	addi $t1, $t1, GRAY				# The eyes will have gray as foreground color
+	li $t1, YELLOW_BACKGROUND			# The eyes will have a yellow background color
+	addi $t1, $t1, GRAY_FOREGROUND			# The eyes will have gray as foreground color
 	li $t2, BOMB					# The eyes will have a bomb icon
 
 	sb $t1, 46($t0)					# First coord is ((2*20)+(3*2)) + starting address	
@@ -116,8 +132,8 @@ smiley:
 	# Finished setting eyes
 
 	# We are setting the mouth
-	lui $t1, RED					# The smile will have a red background
-	addi $t1, $t1, WHITE				# The smile will have a white foreground
+	li $t1, RED_BACKGROUND				# The smile will have a red background
+	addi $t1, $t1, WHITE_FOREGROUND			# The smile will have a white foreground
 	li $t2, EXPLOSION				# The smile will have an explosion icon
 
 	sb $t1, 124($t0)				# First coord is ((6*20)+(2*2)) + starting address	
@@ -198,10 +214,10 @@ search_cells:
 #################################################################
 # Student defined data section
 #################################################################
-
 main:
 	jal smiley
-
+	li $v0, 10
+	syscall
 .data
 .align 2
 cursor_row: .word -1
