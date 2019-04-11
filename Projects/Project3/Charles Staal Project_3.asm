@@ -331,34 +331,33 @@ search_cells:
 set_bomb:
 	# a0/s0 = Row coord
 	# a1/s1 = Column coord
-	# s2 = Offset to the starting address (then will be offset + STARTING_ADDRESS)
-	# s3 = Icon
-	# s4 = color
+	# s2 = Offset + address of cell array
+	# s3 = Cell information/bomb
 	push_all_stack()
 
-	move $s0, $a0
-	move $s1, $a1
-	li $s2, 0
-	li $s3, 0
-	li $s4, BOMB
-	li $s5, BLACK_BACKGROUND
-	addi $s5, $s5, GRAY_FOREGROUND
+	move $t0, $a0
+	move $t1, $a1
+	la $t2, Cell_Array
+	li $t3, CONT_BOMB
 
 	mult_loop:
-		beqz $s0, mult_done
-		addi $s2, $s2, 10
-		addi $s0, $s0, -1
+		beqz $t0, mult_done
+		addi $t2, $t2, 10
+		addi $t0, $t0, -1
 		b mult_loop
 	mult_done:
 
-	addi $s2, $s2, $s1
-	
+	addi $t2, $t2, $t1
+	sb $t3, 0($t2)
 	jal set_adj_bomb
 
 	pop_all_stack()
 	jr $ra
 
 set_adj_bomb:
+	# a0/t0 = Row coord
+	# a1/t1 = Column coord
+	
 	push_all_stack()
 
 	pop_all_stack()
