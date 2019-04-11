@@ -329,38 +329,52 @@ search_cells:
 #################################################################
 
 set_bomb:
-	# a0/s0 = Row coord
-	# a1/s1 = Column coord
-	# s2 = Offset + address of cell array
-	# s3 = Cell information/bomb
-	push_all_stack()
+	# t0/a0 = Row coord
+	# t1/a1 = Column coord
+	# t2 = Offset + address of cell array
+	# t3 = Cell information/bomb
+	push_all_stack()					# Preserve the stack since there is a nested function
 
-	move $t0, $a0
-	move $t1, $a1
-	la $t2, Cell_Array
-	li $t3, CONT_BOMB
+	move $t0, $a0						# Move row coord to t0
+	move $t1, $a1						# move column coord to t1
+	la $t2, Cell_Array					# Load address of cell array
+	li $t3, CONT_BOMB					# Load info for containing a bomb
 
-	mult_loop:
-		beqz $t0, mult_done
-		addi $t2, $t2, 10
-		addi $t0, $t0, -1
-		b mult_loop
-	mult_done:
+	mult_loop:						#
+		beqz $t0, mult_done				# If t0 = 0, we are done multiplying
+		addi $t2, $t2, 10				# Add 10 to the cell array to move to next row
+		addi $t0, $t0, -1				# decrement the row coord/counter
+		b mult_loop					# Go to the beginning of the mult loop
+	mult_done:						#
 
-	addi $t2, $t2, $t1
-	sb $t3, 0($t2)
-	jal set_adj_bomb
+	addi $t2, $t2, $t1					# Add column coord to the cell array address
+	sb $t3, 0($t2)						# Store the bomb info to the address
+	jal set_adj_bomb					# Set adjacent cells to show distance to bomb
 
-	pop_all_stack()
-	jr $ra
+	pop_all_stack()						# Pop the stack
+	jr $ra							# Return to previous address
 
 set_adj_bomb:
 	# a0/t0 = Row coord
 	# a1/t1 = Column coord
-	
-	push_all_stack()
+	# t
+	move $t0, $a0
+	move $t1, $a1
 
-	pop_all_stack()
+	addi $t0, $a0, -1
+	addi $t1, $a1, -1
+	mult_loop:					#
+		beqz $t0, mult_done			# If t0 = 0, we are done multiplying
+		addi $t2, $t2, 10			# Add 10 to the cell array to move to next row
+		addi $t0, $t0, -1			# decrement the row coord/counter
+		b mult_loop				# Go to the beginning of the mult loop
+	mult_done:					# We have the row coord now
+	la $t3, Cell_Array				# We haave the address
+	addi $t2, $t2, $t1				# We have the starting row + starting column coord
+
+	row_loop:
+		column_loop:
+			bltz 
 	jr $ra
 #################################################################
 # Student defined data section
