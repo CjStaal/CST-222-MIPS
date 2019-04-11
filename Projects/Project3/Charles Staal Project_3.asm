@@ -6,38 +6,38 @@
 .text
 
 # Colors
-.eqv BLACK_FOREGROUND 0x00000000
-.eqv RED_FOREGROUND 0x00000001
-.eqv GREEN_FOREGROUND 0x00000010
-.eqv BROWN_FOREGROUND 0x00000011
-.eqv BLUE_FOREGROUND 0x00000100
-.eqv MAGENTA_FOREGROUND 0x00000101
-.eqv CYAN_FOREGROUND 0x00000110
-.eqv GRAY_FOREGROUND 0x00000111
-.eqv DARK_GRAY_FOREGROUND 0x00001000
-.eqv BRIGHT_RED_FOREGROUND 0x00001001
-.eqv BRIGHT_GREEN_FOREGROUND 0x00001010
-.eqv YELLOW_FOREGROUND 0x00001011
-.eqv BRIGHT_BLUE_FOREGROUND 0x00001100
-.eqv BRIGHT_MAGENTA_FOREGROUND 0x00001101
-.eqv BRIGHT_CYAN_FOREGROUND 0x00001110
-.eqv WHITE_FOREGROUND 0x00001111
-.eqv BLACK_BACKGROUND 0x00000000
-.eqv RED_BACKGROUND 0x00010000
-.eqv GREEN_BACKGROUND 0x00100000
-.eqv BROWN_BACKGROUND 0x00110000
-.eqv BLUE_BACKGROUND 0x01000000
-.eqv MAGENTA_BACKGROUND 0x01010000
-.eqv CYAN_BACKGROUND 0x01100000
-.eqv GRAY_BACKGROUND 0x01110000
-.eqv DARK_GRAY_BACKGROUND 0x10000000
-.eqv BRIGHT_RED_BACKGROUND 0x10010000
-.eqv BRIGHT_GREEN_BACKGROUND 0x10100000
-.eqv YELLOW_BACKGROUND 0x10110000
-.eqv BRIGHT_BLUE_BACKGROUND 0x11000000
-.eqv BRIGHT_MAGENTA_BACKGROUND 0x11010000
-.eqv BRIGHT_CYAN_BACKGROUND 0x11100000
-.eqv WHITE_BACKGROUND 0x11110000
+.eqv BLACK_FOREGROUND 0
+.eqv RED_FOREGROUND 1
+.eqv GREEN_FOREGROUND 2
+.eqv BROWN_FOREGROUND 3
+.eqv BLUE_FOREGROUND 4
+.eqv MAGENTA_FOREGROUND 5
+.eqv CYAN_FOREGROUND 6
+.eqv GRAY_FOREGROUND 7
+.eqv DARK_GRAY_FOREGROUND 8
+.eqv BRIGHT_RED_FOREGROUND 9
+.eqv BRIGHT_GREEN_FOREGROUND 10
+.eqv YELLOW_FOREGROUND 11
+.eqv BRIGHT_BLUE_FOREGROUND 12
+.eqv BRIGHT_MAGENTA_FOREGROUND 13
+.eqv BRIGHT_CYAN_FOREGROUND 14
+.eqv WHITE_FOREGROUND 15
+.eqv BLACK_BACKGROUND 0
+.eqv RED_BACKGROUND 16
+.eqv GREEN_BACKGROUND 32
+.eqv BROWN_BACKGROUND 48
+.eqv BLUE_BACKGROUND 64
+.eqv MAGENTA_BACKGROUND 80
+.eqv CYAN_BACKGROUND 96
+.eqv GRAY_BACKGROUND 112
+.eqv DARK_GRAY_BACKGROUND 128
+.eqv BRIGHT_RED_BACKGROUND 144
+.eqv BRIGHT_GREEN_BACKGROUND 160
+.eqv YELLOW_BACKGROUND 176
+.eqv BRIGHT_BLUE_BACKGROUND 192
+.eqv BRIGHT_MAGENTA_BACKGROUND 208
+.eqv BRIGHT_CYAN_BACKGROUND 224
+.eqv WHITE_BACKGROUND 240
 
 # Icons
 .eqv ZERO 48
@@ -55,37 +55,11 @@
 .eqv NULL 0
 
 # Starting address for map
-.eqv STARTING_ADDRESS 0xffff0000
+.eqv STARTING_ADDRESS 4294901760
 
 # Default cell-state
-.eqv DEFAULT_CELL_COLOR 0x00001111
+.eqv DEFAULT_CELL_COLOR 15
 .eqv DEFAULT_CELL_ICON 0
-
-.macro pack_stack()
-	addi $sp, $sp, -36
-	sw $ra, 0($sp)
-	sw $s7, 4($sp)
-	sw $s6, 8($sp)
-	sw $s5, 12($sp)
-	sw $s4, 16($sp)
-	sw $s3, 20($sp)
-	sw $s2, 24($sp)
-	sw $s1, 28($sp)
-	sw $s0, 32($sp)
-.end_macro
-
-.macro unpack_stack()
-	lw $ra, 0($sp)
-	lw $s7, 4($sp)
-	lw $s6, 8($sp)
-	lw $s5, 12($sp)
-	lw $s4, 16($sp)
-	lw $s3, 20($sp)
-	lw $s2, 24($sp)
-	lw $s1, 28($sp)
-	lw $s0, 32($sp)
-	addi $sp, $sp, 36
-.end_macro
 
 ##############################
 # PART 1 FUNCTIONS
@@ -93,18 +67,18 @@
 
 smiley:
 	# t0 = Starting address
-	# t1 = Color of cell background (high bits) and foreground (low bits)
-	# t2 = icon of cell
+	# t1 = icon of cell
+	# t2 = Color of cell background (high bits) and foreground (low bits)
 
 	li $t0, STARTING_ADDRESS			# The starting address of the cells
-	li $t1, DEFAULT_CELL_COLOR			# t1 will be used for color
-	li $t2, DEFAULT_CELL_ICON			# t2 will be used for icon
+	li $t1, '\0'			# t1 will be used for icon
+	li $t2, 15			# t2 will be used for color
 	li $t3, 0					# Counter will start at zero and go until it reaches 200
 
 	map_default_loop:
 		beq $t3, 200, default_map_done		# There are two hundred bytes in the map and we must go through them all
-		sb $t1, 0($t0)				# The first byte stores the color
-		sb $t2, 1($t0)				# The second byte stores the icon
+		sb $t1, 0($t0)				# The first byte stores the icon
+		sb $t2, 1($t0)
 		addi $t0, $t0, 2			# We must increment by two since we are modifying two bytes each
 		addi $t3, $t3, 2			# Same as above
 		b map_default_loop
@@ -112,50 +86,49 @@ smiley:
 	default_map_done:
 
 	li $t0, STARTING_ADDRESS			# t0 will be starting address
-
+	
 	# We are setting the eyes
-	li $t1, YELLOW_BACKGROUND			# The eyes will have a yellow background color
-	addi $t1, $t1, GRAY_FOREGROUND			# The eyes will have gray as foreground color
-	li $t2, BOMB					# The eyes will have a bomb icon
+	li $t2, YELLOW_BACKGROUND			# The eyes will have a yellow background color
+	addi $t2, $t2, GRAY_FOREGROUND			# The eyes will have gray as foreground color
+	li $t1, BOMB					# The eyes will have a bomb icon
 
-	sb $t1, 46($t0)					# First coord is ((2*20)+(3*2)) + starting address	
-	sb $t2, 47($t0)					# The byte right after is the icon for said cell
+	sb $t1, 46($t0)					# First coord is ((2*20)+(3*2)) + starting address
+	sb $t2, 47($t0)					# The byte right after is the color for said cell
 
-	sb $t1, 52($t0)					# First coord is ((2*20)+(6*2)) + starting address	
-	sb $t2, 53($t0)					# The byte right after is the icon for said cell
+	sb $t1, 52($t0)					# First coord is ((2*20)+(6*2)) + starting address
+	sb $t2, 53($t0)					# The byte right after is the color for said cell
 
-	sb $t1, 66($t0)					# First coord is ((3*20)+(3*2)) + starting address	
-	sb $t2, 67($t0)					# The byte right after is the icon for said cell
+	sb $t1, 66($t0)					# First coord is ((3*20)+(3*2)) + starting address
+	sb $t2, 67($t0)					# The byte right after is the color for said cell
 
-	sb $t1, 72($t0)					# First coord is ((3*20)+(6*2)) + starting address	
-	sb $t2, 73($t0)					# The byte right after is the icon for said cell
+	sb $t1, 72($t0)					# First coord is ((3*20)+(6*2)) + starting address
+	sb $t2, 73($t0)					# The byte right after is the color for said cell
 	# Finished setting eyes
 
 	# We are setting the mouth
-	li $t1, RED_BACKGROUND				# The smile will have a red background
-	addi $t1, $t1, WHITE_FOREGROUND			# The smile will have a white foreground
-	li $t2, EXPLOSION				# The smile will have an explosion icon
+	li $t2, RED_BACKGROUND				# The smile will have a red background
+	addi $t2, $t2, WHITE_FOREGROUND			# The smile will have a white foreground
+	li $t1, EXPLOSION				# The smile will have an explosion icon
 
-	sb $t1, 124($t0)				# First coord is ((6*20)+(2*2)) + starting address	
-	sb $t2, 125($t0)				# The byte right after is the icon for said cell
+	sb $t1, 124($t0)				# First coord is ((6*20)+(2*2)) + starting address
+	sb $t2, 125($t0)				# The byte right after is the color for said cell
 
-	sb $t1, 134($t0)				# First coord is ((6*20)+(7*2)) + starting address	
-	sb $t2, 135($t0)				# The byte right after is the icon for said cell
+	sb $t1, 134($t0)				# First coord is ((6*20)+(7*2)) + starting address
+	sb $t2, 135($t0)				# The byte right after is the color for said cell
 
-	sb $t1, 146($t0)				# First coord is ((7*20)+(3*2)) + starting address	
-	sb $t2, 147($t0)				# The byte right after is the icon for said cell
+	sb $t1, 146($t0)				# First coord is ((7*20)+(3*2)) + starting address
+	sb $t2, 147($t0)				# The byte right after is the color for said cell
 
-	sb $t1, 152($t0)				# First coord is ((7*20)+(6*2)) + starting address	
-	sb $t2, 153($t0)				# The byte right after is the icon for said cell
+	sb $t1, 152($t0)				# First coord is ((7*20)+(6*2)) + starting address
+	sb $t2, 153($t0)				# The byte right after is the color for said cell
 
-	sb $t1, 168($t0)				# First coord is ((8*20)+(4*2)) + starting address	
-	sb $t2, 169($t0)				# The byte right after is the icon for said cell
+	sb $t1, 168($t0)				# First coord is ((8*20)+(4*2)) + starting address
+	sb $t2, 169($t0)				# The byte right after is the color for said cell
 
-	sb $t1, 170($t0)				# First coord is ((8*20)+(5*2)) + starting address	
-	sb $t2, 171($t0)				# The byte right after is the icon for said cell
+	sb $t1, 170($t0)				# First coord is ((8*20)+(5*2)) + starting address
+	sb $t2, 171($t0)				# The byte right after is the color for said cell
 	# finished setting mouth
 
-	unpack_stack()					# The stack must be unpacked before returning
 	jr $ra						# returns to previous address
 
 ##############################
