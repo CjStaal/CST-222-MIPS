@@ -129,6 +129,20 @@
 	addi $sp, $sp, 64
 .end_macro
 
+.macro zero_cell_array()
+	li $t0, MAX_CELLS
+	la $t1, Cell_Array
+	li $t2, 0
+
+	zero_cell_array_loop:
+		beqz $t0, zero_cell_array_done
+		sb $t2, 0($t1)
+		addi $t1, $t1, 1
+		addi $t0, $t0, -1
+		b zero_cell_array_loop
+
+	zero_cell_array_done:
+.end_macro
 #################################################################
 # PART 1 FUNCTIONS
 #################################################################
@@ -238,7 +252,7 @@ load_map:
 	# s5 = Toggle to load in to row or column. If 1 by the time we reach EOF we know there is a coord missing
 	# v0 = Returns -1 if error, else returns 0
 	push_all_stack()					# Push the stack to preserve previous registers
-
+	zero_cell_array()					# Make sure the cell array is all zero'd
 	la $s3, Cell_Array					# s0 will be the base address of the cell array
 	li $s1, 0						# s1 will be the cell location/offset of the cell array
 
