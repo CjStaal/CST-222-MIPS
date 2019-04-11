@@ -6,7 +6,7 @@
 
 .text
 
-# Colors
+# Cell foreground colors
 .eqv BLACK_FOREGROUND 0
 .eqv RED_FOREGROUND 1
 .eqv GREEN_FOREGROUND 2
@@ -24,6 +24,7 @@
 .eqv BRIGHT_CYAN_FOREGROUND 14
 .eqv WHITE_FOREGROUND 15
 
+# Cell background colors
 .eqv BLACK_BACKGROUND 0
 .eqv RED_BACKGROUND 16
 .eqv GREEN_BACKGROUND 32
@@ -41,7 +42,7 @@
 .eqv BRIGHT_CYAN_BACKGROUND 224
 .eqv WHITE_BACKGROUND 240
 
-# Icons
+# Cell icons
 .eqv ZERO_ICON 48
 .eqv ONE_ICON 49
 .eqv TWO_ICON 50
@@ -59,14 +60,21 @@
 # Starting address for map
 .eqv STARTING_ADDRESS 4294901760
 
-# Default cell-state
+# Default cell display state
 .eqv DEFAULT_CELL_COLOR 15
 .eqv DEFAULT_CELL_ICON 0
+
+# Cell info
+.eqv ADJ_BOMB 1
+.eqv CONT_FLAG 16
+.eqv CONT_BOMB 32
+.eqv CELL_REVEALED 64
 
 # Quantities
 .eqv MAX_CELLS 100 
 .eqv MAX_BUFFER_SIZE 1024
 .eqv CHAR_TO_INT_VALUE -48
+
 # Syscalls
 .eqv PRINT_INTEGER 1
 .eqv PRINT_STRING 4
@@ -241,6 +249,8 @@ load_map:
 	beq $v0, -1, invalid_case				# If syscall returns a -1, we know there was an error
 
 	li $s5, 0						# Initiates row/column toggle to start with row
+	lb $s4, 0($s3)						# Load the byte before we begin to make sure it's not an empty file
+	beqz $s4, invalid_case					# If it's EOF, return error
 
 	load_map_loop:						#
 		lb $s4, 0($s3)					# Load byte in to s4 from cell array
@@ -319,14 +329,40 @@ search_cells:
 #################################################################
 
 set_bomb:
-	# a0 = Row coord
-	# a1 = Column coord
-	# s0 = Offset to the starting address (then will be offset + STARTING_ADDRESS)
-	# s1 = Color
+	# a0/s0 = Row coord
+	# a1/s1 = Column coord
+	# s2 = Offset to the starting address (then will be offset + STARTING_ADDRESS)
+	# s3 = Icon
+	# s4 = color
+	push_all_stack()
 
+	move $s0, $a0
+	move $s1, $a1
+	li $s2, 0
+	li $s3, 0
+	li $s4, BOMB
+	li $s5, BLACK_BACKGROUND
+	addi $s5, $s5, GRAY_FOREGROUND
+
+	mult_loop:
+		beqz $s0, mult_done
+		addi $s2, $s2, 10
+		addi $s0, $s0, -1
+		b mult_loop
+	mult_done:
+
+	addi $s2, $s2, $s1
 	
-toggle_adjacent_bomb_cells:
+	jal set_adj_bomb
 
+	pop_all_stack()
+	jr $ra
+
+set_adj_bomb:
+	push_all_stack()
+
+	pop_all_stack()
+	jr $ra
 #################################################################
 # Student defined data section
 #################################################################
