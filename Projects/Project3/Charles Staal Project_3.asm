@@ -103,41 +103,30 @@
 # PART 0 MACROS
 #################################################################
 
-# Going by http://www.cs.ucsb.edu/~franklin/64/resources/spim/BookCallConvention.htm
-.macro push_all_stack()
-	addi $sp $sp, -64					# -(L+R+A+1+1)*4=60 A = maximum # of args (4), R = Preserved Registers (8), L = words of local data (1), FP (1), SP (1), + padding
-	sw $a0, 0($sp)						#
-	sw $a1, 4($sp)						#
-	sw $a2, 8($sp)						#
-	sw $a3, 12($sp)						#
-	sw $s0, 24($sp)						#
-	sw $s1, 28($sp)						#
-	sw $s2, 32($sp)						#
-	sw $s3, 36($sp)						#
-	sw $s4, 40($sp)						#
-	sw $s5, 44($sp)						#
-	sw $s6, 48($sp)						#
-	sw $s7, 52($sp)						#
-	sw $fp, 56($sp)						#
-	sw $ra, 60($sp)						#
+.macro pack_stack()
+	subi $sp, $sp, 36
+	sw $ra, 0($sp)
+	sw $s7, 4($sp)
+	sw $s6, 8($sp)
+	sw $s5, 12($sp)
+	sw $s4, 16($sp)
+	sw $s3, 20($sp)
+	sw $s2, 24($sp)
+	sw $s1, 28($sp)
+	sw $s0, 32($sp)
 .end_macro
 
-.macro pop_all_stack()
-	lw $ra, 0($sp)						#
-	lw $fp, 4($sp)						#
-	lw $s7, 8($sp)						#
-	lw $s6, 12($sp)						#
-	lw $s5, 16($sp)						#
-	lw $s4, 20($sp)						#
-	lw $s3, 24($sp)						#
-	lw $s2, 28($sp)						#
-	lw $s1, 32($sp)						#
-	lw $s0, 36($sp)						#
-	lw $a3, 48($sp)						#
-	lw $a2, 52($sp)						#
-	lw $a1, 56($sp)						#
-	lw $a0, 60($sp)						#
-	addi $sp, $sp, 64					#
+.macro unpack_stack()
+	lw $ra, 0($sp)
+	lw $s7, 4($sp)
+	lw $s6, 8($sp)
+	lw $s5, 12($sp)
+	lw $s4, 16($sp)
+	lw $s3, 20($sp)
+	lw $s2, 24($sp)
+	lw $s1, 28($sp)
+	lw $s0, 32($sp)
+	addi $sp, $sp, 36
 .end_macro
 
 .macro zero_cell_array()
