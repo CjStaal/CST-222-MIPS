@@ -5,6 +5,9 @@
 #################################################################
 
 .text
+#################################################################
+#PART -1 .EQV's
+#################################################################
 
 # Cell foreground colors
 .eqv BLACK_FOREGROUND 0
@@ -144,6 +147,21 @@
 	zero_cell_array_done:
 .end_macro
 
+.macro set_all_cells(%icon, %color)
+	li $t0, STARTING_ADDRESS				# The starting address of the cells
+	li $t3, MAX_CELLS					# Counter will start at MAX_CELLS and go until it reaches 0
+
+	map_loop:						#
+		beqz $t3, map_done				# There are two hundred bytes in the map and we must go through them all
+		sb %icon, 0($t0)				# The first byte stores the icon
+		sb %color, 1($t0)				# The second byte stores the color
+		addi $t0, $t0, 2				# We must increment by two since we are modifying two bytes each
+		addi $t3, $t3, -1				# Same as above
+		b map_loop					# Return to the start of the map default loop
+	map_done:						#
+	# We are done setting all cells to $icon and $color values
+.end_macro
+
 #################################################################
 # PART 1 FUNCTIONS
 #################################################################
@@ -162,20 +180,9 @@ smiley:
 	# t3 = Counter set at MAX_CELLS and will decrement
 
 	# We are setting all cells to default values
-	li $t0, STARTING_ADDRESS				# The starting address of the cells
 	li $t1, DEFAULT_CELL_ICON				# t1 will be used for icon
 	li $t2, DEFAULT_CELL_COLOR				# t2 will be used for color
-	li $t3, MAX_CELLS					# Counter will start at MAX_CELLS and go until it reaches 0
-
-	map_default_loop:					#
-		beqz $t3, default_map_done			# There are two hundred bytes in the map and we must go through them all
-		sb $t1, 0($t0)					# The first byte stores the icon
-		sb $t2, 1($t0)					# The second byte stores the color
-		addi $t0, $t0, 2				# We must increment by two since we are modifying two bytes each
-		addi $t3, $t3, -1				# Same as above
-		b map_default_loop				# Return to the start of the map default loop
-	default_map_done:					#
-	# We are done setting all cells to default values
+	set_all_cells($t1, $t2)
 
 	li $t0, STARTING_ADDRESS				# t0 will be starting address
 	
@@ -252,6 +259,7 @@ load_map:
 	# s4 = Char from File_Buffer
 	# s5 = Toggle to load in to row or column. If 1 by the time we reach EOF we know there is a coord missing
 	# v0 = Returns -1 if error, else returns 0
+
 	push_all_stack()					# Push the stack to preserve previous registers
 	zero_cell_array()					# Make sure the cell array is all zero'd
 	la $s3, Cell_Array					# s0 will be the base address of the cell array
@@ -315,7 +323,20 @@ load_map:
 #################################################################
 
 init_display:
-	jr $ra
+	# This function takes no arguments
+
+	li $t1, NULL_ICON					# Loads the null icon to t1
+	li $t2, GRAY_BACKGROUND					# Loads a gray background to t2
+	addi $t2, $t2, GRAY_FOREGROUND				# Adds a gray foreground to t2
+	set_all_cells($t1, $t2)					# Set all cells to t1 and t2
+
+	sb $t1, Cursor_Row					# NULL_ICON is 0 so we can reuse t1 to make cursor be in row 0
+	sb $t1, Cursor_Column					# NULL_ICON is 0 so we can reuse t1 to make cursor be in column 0
+	li $t2, YELLOW_BACKGROUND				# Set yellow background to t2
+	addi $t2, $t2, GRAY_FOREGROUND				# Add gray foreground to t2
+	la $t0, STARTING_ADDRESS				# Load starting address of display
+	sb $t2, 1($t0)						# Add the color information to the first box, where the cursor is
+	jr $ra							# Return to previous address
 
 set_cell:
 	jr $ra
@@ -350,6 +371,7 @@ set_bomb:
 	# t1/a1 = Column coord
 	# t2 = Offset + address of cell array
 	# t3 = Cell information/bomb
+
 	push_all_stack()					# Preserve the stack since there is a nested function
 
 	move $t0, $a0						# Move row coord to t0
@@ -381,6 +403,7 @@ set_adj_bomb:
 	# t4 = Column counter
 	# t5 = Row coord + row counter
 	# t6 = Column coord + column counter
+
 	move $t0, $a0						# Move row coord to t0
 	move $t1, $a1						# Move column cord to t1
 
