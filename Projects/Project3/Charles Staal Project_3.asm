@@ -60,6 +60,14 @@
 .eqv FLAG_ICON 70
 .eqv NULL_ICON 0
 
+# Icon colors
+.eqv EXPLODED_BOMB_COLOR 151
+.eqv BOMB_COLOR 7
+.eqv NUMBER_COLOR 13
+.eqv FLAG_COLOR 124
+.eqv CORRECT_FLAG_COLOR 172
+.eqv INCORRECT_FLAG_COLOR 28
+
 # Starting address for map
 .eqv STARTING_ADDRESS 4294901760
 
@@ -97,39 +105,39 @@
 
 # Going by http://www.cs.ucsb.edu/~franklin/64/resources/spim/BookCallConvention.htm
 .macro push_all_stack()
-	addi $sp $sp, -64					# -(L+R+A+1+1)*4=64 A = maximum # of args (4), R = Preserved Registers (8), L = words of local data (1), FP (1), SP (1), + padding
-	sw $a0, 0($sp)
-	sw $a1, 4($sp)
-	sw $a2, 8($sp)
-	sw $a3, 12($sp)
-	sw $s0, 20($sp)
-	sw $s1, 24($sp)
-	sw $s2, 28($sp)
-	sw $s3, 32($sp)
-	sw $s4, 36($sp)
-	sw $s5, 40($sp)
-	sw $s6, 44($sp)
-	sw $s7, 48($sp)
-	sw $fp, 54($sp)
-	sw $ra, 56($sp)
+	addi $sp $sp, -64					# -(L+R+A+1+1)*4=60 A = maximum # of args (4), R = Preserved Registers (8), L = words of local data (1), FP (1), SP (1), + padding
+	sw $a0, 0($sp)						#
+	sw $a1, 4($sp)						#
+	sw $a2, 8($sp)						#
+	sw $a3, 12($sp)						#
+	sw $s0, 24($sp)						#
+	sw $s1, 28($sp)						#
+	sw $s2, 32($sp)						#
+	sw $s3, 36($sp)						#
+	sw $s4, 40($sp)						#
+	sw $s5, 44($sp)						#
+	sw $s6, 48($sp)						#
+	sw $s7, 52($sp)						#
+	sw $fp, 56($sp)						#
+	sw $ra, 60($sp)						#
 .end_macro
 
 .macro pop_all_stack()
-	lw $ra, 0($sp)
-	lw $fp, 4($sp)
-	lw $s7, 8($sp)
-	lw $s6, 12($sp)
-	lw $s5, 16($sp)
-	lw $s4, 20($sp)
-	lw $s3, 24($sp)
-	lw $s2, 28($sp)
-	lw $s1, 32($sp)
-	lw $s0, 36($sp)
-	lw $a3, 44($sp)
-	lw $a2, 48($sp)
-	lw $a1, 52($sp)
-	lw $a0, 56($sp)
-	addi $sp, $sp, 64
+	lw $ra, 0($sp)						#
+	lw $fp, 4($sp)						#
+	lw $s7, 8($sp)						#
+	lw $s6, 12($sp)						#
+	lw $s5, 16($sp)						#
+	lw $s4, 20($sp)						#
+	lw $s3, 24($sp)						#
+	lw $s2, 28($sp)						#
+	lw $s1, 32($sp)						#
+	lw $s0, 36($sp)						#
+	lw $a3, 48($sp)						#
+	lw $a2, 52($sp)						#
+	lw $a1, 56($sp)						#
+	lw $a0, 60($sp)						#
+	addi $sp, $sp, 64					#
 .end_macro
 
 .macro zero_cell_array()
@@ -340,7 +348,46 @@ init_display:
 	jr $ra							# Return to previous address
 
 set_cell:
-	jr $ra
+	# t0/a0 = Row index
+	# t1/a1 = Column index
+	# t2/a2 = Icon to be displayed
+	# t3/a3 = New Foreground color, and then will be background color + foreground color
+	# t4 = New backround color
+	# t5 = Scrap
+	move $t0, $a0						# Move row index to t0
+	move $t1, $a1						# Move column index to t1
+	move $t2, $a2						# Move Icon to t2
+	move $t3, $a3						# Move foreground color to t3
+	lw $t4, 0($sp)						# Load background color from stack to t4
+
+	bltz $t0, set_cell_error				# If row is less than zero
+	bltz $t1, set_cell_error				# Or row is greater than 9, return error
+	bgt $t0, 9, set_cell_error				# If column is less than zero
+	bgt $t1, 9, set_cell_error				# Or column is greater than 9, return error
+	bltz $t3, set_cell_error				# If foreground color is less than 0
+	bgt $t3, 15, set_cell_error				# Or foreground color is greater than 15, return error
+	srl $t5, $t4, 4						# Shift background color code right by 4 bits so we can check the color easier
+	bltz $t5, set_cell_error				# If background color is less than 0
+	bgt $t5, 15, set_cell_error				# Or is background color is greater than 15, return error
+
+	li $t5, 20						# Load 20 in to t5 for multiplication
+	mul $t0, $t0, $t5					# Multiply row by 20 to get offset
+	sll $t1, $t1, 2						# Shift column by 2 to multiply it by 2
+	addi $t5, $t1, STARTING_ADDRESS				# Add column and the display starting address in to t5
+	add $t5, $t5, $t0					# Add the row offset in to t5
+
+	add $t3, $t3, $t4					# Add the two colors together
+
+	sb $t2, 0($t5)						# Store the icon in to the address in t5
+	sb $t3, 1($t1)						# Store the color in to the address in t5 + 1
+	li $v0, 0						# There was no error, load 0 in to the return value
+	b set_cell_end						# Go to the end of the function
+
+	set_cell_error:						# Go here if there is any error
+	li $v0, -1						# Load -1 in to the return value
+
+	set_cell_end:						# The end of the function
+	jr $ra							# Return to previous address
 
 reveal_map:
 	jr $ra
@@ -372,21 +419,16 @@ set_bomb:
 	# t1/a1 = Column coord
 	# t2 = Offset + address of cell array
 	# t3 = Cell information/bomb
-
+	# t4 = 10 for multiplication
 	push_all_stack()					# Preserve the stack since there is a nested function
 
 	move $t0, $a0						# Move row coord to t0
 	move $t1, $a1						# move column coord to t1
 	la $t2, Cell_Array					# Load address of cell array
 	li $t3, CONT_BOMB					# Load info for containing a bomb
-
-	mult_loop:						#
-		beqz $t0, mult_done				# If t0 = 0, we are done multiplying
-		addi $t2, $t2, 10				# Add 10 to the cell array to move to next row
-		addi $t0, $t0, -1				# decrement the row coord/counter
-		b mult_loop					# Go to the beginning of the mult loop
-	mult_done:						#
-
+	li $t4, 10
+	mul $t0, $t0, $t4					# Multiply row coord by 10
+	add $t2, $t2, $t0					# Add row to cell array address
 	add $t2, $t2, $t1					# Add column coord to the cell array address
 	sb $t3, 0($t2)						# Store the bomb info to the address
 	jal set_adj_bomb					# Set adjacent cells to show distance to bomb
@@ -404,7 +446,7 @@ set_adj_bomb:
 	# t4 = Column counter
 	# t5 = Row coord + row counter
 	# t6 = Column coord + column counter
-
+	# t7 = 10 for multiplication
 	move $t0, $a0						# Move row coord to t0
 	move $t1, $a1						# Move column cord to t1
 
@@ -435,14 +477,8 @@ set_adj_bomb:
 		bgt $t6, 9, return_to_column_loop		# If the column coord now is more than 9, we are off the grid
 		la $t2, Cell_Array				# Load the cell array address in to t2
 		add $t2, $t2, $t6				# Add the cell array address and column coord
-
-		mult_loop2:					# We need to add 10 * row coord to t2
-			beqz $t5, mult_done2			# If t5 is zero, we are done
-			addi $t2, $t2, 10			# Add 10 to t2
-			addi $t5, $t5, -1			# Decrement t5 by 1
-			b mult_loop2				# Return to the start of mult_loop2
-		mult_done2:					#
-
+		mul $t5, $t5, $t7				# Multiply row by 10
+		add $t2, $t2, $t5				# Add to cell array address
 		lb $t7, 0($t2)					# Load the byte from the address of cell array
 		beq $t7, CONT_BOMB, return_to_column_loop	# If it is equal to a bomb, don't do anything and return to the column loop
 		addi $t7, $t7, ADJ_BOMB				# Else increment it by 1
