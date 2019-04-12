@@ -332,7 +332,7 @@ init_display:
 	set_all_cells($t1, $t2)					# Set all cells to t1 and t2
 
 	sb $t1, Cursor_Row					# NULL_ICON is 0 so we can reuse t1 to make cursor be in row 0
-	sb $t1, Cursor_Column					# NULL_ICON is 0 so we can reuse t1 to make cursor be in column 0
+	sb $t1, Cursor_Col					# NULL_ICON is 0 so we can reuse t1 to make cursor be in column 0
 	li $t2, YELLOW_BACKGROUND				# Set yellow background to t2
 	addi $t2, $t2, GRAY_FOREGROUND				# Add gray foreground to t2
 	la $t0, STARTING_ADDRESS				# Load starting address of display
