@@ -416,7 +416,7 @@ set_adj_bomb:
 		beq $t3, 3, set_adj_bomb_finished		# If the row counter = 3, then we are finished
 		column_loop:					#
 			beq $t4, 3, return_to_row_loop		# If the column counter = 3, reset the column counter and increment row counter
-			b add_info				# Branch to add information to cells
+			b add_cell_info				# Branch to add information to cells
 			return_to_column_loop:			# This is where the branch returns to
 			addi $t4, $t4, 1			# Increment column counter
 			b column_loop				# Return to start of column counter loop
@@ -426,7 +426,7 @@ set_adj_bomb:
 		b row_loop					# Return to beginning of row loop
 	row_loop_end:						#
 
-	add_info:						#
+	add_cell_info:						#
 		add $t5, $t0, $t3				# Add row coord and row counter
 		add $t6, $t1, $t4				# Add column coord and column counter
 		bltz $t5, return_to_row_loop			# If the row coord now is less than 0, we are off the grid
@@ -452,6 +452,7 @@ set_adj_bomb:
 
 	set_adj_bomb_finished:					#
 		jr $ra						# Return to previous address
+
 #################################################################
 # Student defined data section
 #################################################################
