@@ -162,13 +162,15 @@
 #################################################################
 # PART 1 FUNCTIONS
 #################################################################
+
 .globl main
+
 main:
 	jal smiley
 	nop
 	li $v0, 10
 	syscall
-	
+
 smiley:
 	# There are no arguments for this function
 	# t0 = Starting address
@@ -176,14 +178,12 @@ smiley:
 	# t2 = Color of cell background (high bits) and foreground (low bits)
 	# t3 = Counter set at MAX_CELLS and will decrement
 
-	# We are setting all cells to default values
 	li $t1, DEFAULT_CELL_ICON				# t1 will be used for icon
 	li $t2, DEFAULT_CELL_COLOR				# t2 will be used for color
 	set_all_cells($t1, $t2)
 
 	li $t0, STARTING_ADDRESS				# t0 will be starting address
-	
-	# We are setting the eyes
+
 	li $t1, BOMB_ICON					# The eyes will have a bomb icon
 	li $t2, YELLOW_BACKGROUND				# The eyes will have a yellow background color
 	addi $t2, $t2, GRAY_FOREGROUND				# The eyes will have gray as foreground color
@@ -199,9 +199,7 @@ smiley:
 
 	sb $t1, 72($t0)						# First coord is ((3*20)+(6*2)) + starting address
 	sb $t2, 73($t0)						# The byte right after is the color for said cell
-	# Finished setting eyes
 
-	# We are setting the mouth
 	li $t1, EXPLOSION_ICON					# The smile will have an explosion icon
 	li $t2, RED_BACKGROUND					# The smile will have a red background
 	addi $t2, $t2, WHITE_FOREGROUND				# The smile will have a white foreground
@@ -223,7 +221,6 @@ smiley:
 
 	sb $t1, 170($t0)					# First coord is ((8*20)+(5*2)) + starting address
 	sb $t2, 171($t0)					# The byte right after is the color for said cell
-	# finished setting mouth
 
 	jr $ra							# returns to previous address
 
@@ -343,6 +340,7 @@ set_cell:
 	# t3/a3 = New Foreground color, and then will be background color + foreground color
 	# t4 = New backround color
 	# t5 = Scrap
+
 	move $t0, $a0						# Move row index to t0
 	move $t1, $a1						# Move column index to t1
 	move $t2, $a2						# Move Icon to t2
