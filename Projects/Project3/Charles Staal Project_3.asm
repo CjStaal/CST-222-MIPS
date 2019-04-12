@@ -324,6 +324,7 @@ load_map:
 
 init_display:
 	# This function takes no arguments
+	# We do not need to save the stack as there are no nested functions
 
 	li $t1, NULL_ICON					# Loads the null icon to t1
 	li $t2, GRAY_BACKGROUND					# Loads a gray background to t2
