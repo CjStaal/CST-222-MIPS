@@ -104,7 +104,7 @@
 #################################################################
 
 .macro pack_stack()
-	subi $sp, $sp, 36
+	addi $sp, $sp, -36
 	sw $ra, 0($sp)
 	sw $s7, 4($sp)
 	sw $s6, 8($sp)
@@ -129,15 +129,14 @@
 	addi $sp, $sp, 36
 .end_macro
 
-.macro zero_cell_array()
+.macro zero_cell_array(%address)
 	li $t0, MAX_CELLS
-	la $t1, Cell_Array
 	li $t2, 0
 
 	zero_cell_array_loop:
 		beqz $t0, zero_cell_array_done
-		sb $t2, 0($t1)
-		addi $t1, $t1, 1
+		sb $t2, 0(%address)
+		addi %address, %address, 1
 		addi $t0, $t0, -1
 		b zero_cell_array_loop
 
@@ -239,13 +238,15 @@ open_file:
 
 close_file:
 	# There are no arguments for this function
+
 	li $v0, CLOSE_FILE					#
 	syscall							#
 
 	jr $ra							#
 
 load_map:
-	# There are no arguments for this function
+	# a0 = File descriptor
+	# a1 = Cell array address
 	# s0 = Base address of cell_array
 	# s1 = cell location/offset for cell array
 	# s2 = counter set at MAX_CELLS and will decrement
@@ -254,12 +255,12 @@ load_map:
 	# s5 = Toggle to load in to row or column. If 1 by the time we reach EOF we know there is a coord missing
 	# v0 = Returns -1 if error, else returns 0
 
-	push_all_stack()					# Push the stack to preserve previous registers
-	zero_cell_array()					# Make sure the cell array is all zero'd
-	la $s3, Cell_Array					# s0 will be the base address of the cell array
+	pack_stack()						# Push the stack to preserve previous registers
+	move $t0, $a0
+	zero_cell_array($t0)					# Make sure the cell array is all zero'd
+	move $s3, $a1						# s0 will be the base address of the cell array
 	li $s1, 0						# s1 will be the cell location/offset of the cell array
 
-	move $a0, $v0						# v0 contains file descriptor, so move to a0
 	li $v0, READ_FROM_FILE					# Set the syscall to read from file
 	la $a1, File_Buffer					# a1 is the address of the input buffer
 	li $a2, MAX_BUFFER_SIZE					# Bytes to be read
@@ -309,7 +310,7 @@ load_map:
 		b load_file_finished				# Go to the end of the function
 
 	load_file_finished:					#
-		pop_all_stack()					# Pop the stack
+		unpack_stack()					# Pop the stack
 		jr $ra						# Return to previous address
 
 #################################################################
@@ -384,6 +385,8 @@ reveal_map:
 #################################################################
 
 perform_action:
+
+	
 	jr $ra
 
 game_status:
@@ -404,14 +407,15 @@ set_bomb:
 	# This function returns no value
 	# t0/a0 = Row coord
 	# t1/a1 = Column coord
-	# t2 = Offset + address of cell array
+	# t2/a2 = Cell array address	(Will then be cell array address + offset
 	# t3 = Cell information/bomb
 	# t4 = 10 for multiplication
-	push_all_stack()					# Preserve the stack since there is a nested function
+
+	pack_stack()						# Preserve the stack since there is a nested function
 
 	move $t0, $a0						# Move row coord to t0
 	move $t1, $a1						# move column coord to t1
-	la $t2, Cell_Array					# Load address of cell array
+	move $t2, $a2						# move address of cell array in to t2
 	li $t3, CONT_BOMB					# Load info for containing a bomb
 	li $t4, 10
 	mul $t0, $t0, $t4					# Multiply row coord by 10
@@ -420,7 +424,7 @@ set_bomb:
 	sb $t3, 0($t2)						# Store the bomb info to the address
 	jal set_adj_bomb					# Set adjacent cells to show distance to bomb
 
-	pop_all_stack()						# Pop the stack
+	unpack_stack()						# Pop the stack
 	jr $ra							# Return to previous address
 
 set_adj_bomb:
@@ -428,12 +432,13 @@ set_adj_bomb:
 	# We do not need to push the stack as this function does not nest another
 	# t0/a0 = Row coord
 	# t1/a1 = Column coord
-	# t2 = Address of cell array
+	# t2/a2 = Cell array address
 	# t3 = Row counter
 	# t4 = Column counter
 	# t5 = Row coord + row counter
 	# t6 = Column coord + column counter
 	# t7 = 10 for multiplication
+
 	move $t0, $a0						# Move row coord to t0
 	move $t1, $a1						# Move column cord to t1
 
@@ -462,7 +467,7 @@ set_adj_bomb:
 		bltz $t6, return_to_column_loop			# If the column coord now is less than 0, we are off the grid
 		bgt $t5, 9, return_to_row_loop			# If the row coord now is more than 9, we are off the grid
 		bgt $t6, 9, return_to_column_loop		# If the column coord now is more than 9, we are off the grid
-		la $t2, Cell_Array				# Load the cell array address in to t2
+		move $t2, $a2					# Move the cell array address in to t2
 		add $t2, $t2, $t6				# Add the cell array address and column coord
 		mul $t5, $t5, $t7				# Multiply row by 10
 		add $t2, $t2, $t5				# Add to cell array address
@@ -484,5 +489,4 @@ set_adj_bomb:
 .align 2
 Cursor_Row: .word -1
 Cursor_Col: .word -1
-Cell_Array: .space MAX_CELLS
 File_Buffer: .space MAX_BUFFER_SIZE
