@@ -224,26 +224,26 @@ load_map:
 	pack_stack()						# Preserve the stack since there is a nested function
 	move $t0, $a1						#
 	zero_cell_array($t0)					# Make sure the cell array is all zero'd
-	move $s3, $a1						# s0 will be the base address of the cell array
+	move $s0, $a1						# s0 Will be the base address of the cell array
 	li $s1, 0						# s1 will be the cell location/offset of the cell array
-
 	li $v0, READ_FROM_FILE					# Set the syscall to read from file
 	la $a1, File_Buffer					# a1 is the address of the input buffer
 	li $a2, MAX_BUFFER_SIZE					# Bytes to be read
 	syscall							# Calls the function to read the file in to the buffer
 
 	beq $v0, -1, invalid_case				# If syscall returns a -1, we know there was an error
-
+	move $s3, $a1
 	li $s5, 0						# Initiates row/column toggle to start with row
 	lb $s4, 0($s3)						# Load the byte before we begin to make sure it's not an empty file
 	beqz $s4, invalid_case					# If it's EOF, return error
 
 	load_map_loop:						#
-		lb $s4, 0($s3)					# Load byte in to s4 from cell array
+		lb $s4, 0($s3)					# Load byte in to s4 from file buffer
 		beq $s4, ' ', increment_map_address		# If it's a space, increment and go to next byte
 		beq $s4, '\t', increment_map_address		# If it's a tab, increment and go to next byte
 		beq $s4, '\r', increment_map_address		# If it's a carraige return, increment and go to next byte
 		beq $s4, '\n', increment_map_address		# If it's a newline, increment and go to next byte
+		beqz $s4, end_of_load				# If it's null, we are at the end of the file
 		blt $s4, '0', invalid_case			# If it's less than a '0', it's invalid now
 		bgt $s4, '9', invalid_case			# If it's higher than a '9' it's invalid now too
 		beq $s5, 1, column_load				# If it's toggled 1, we are dealing with a column
@@ -260,11 +260,15 @@ load_map:
 			move $a1, $s4				# Move the char to the column register
 			addi $a1, $a1, CHAR_TO_INT_VALUE	# Minus the offset to bring it to its true value
 			addi $s5, $s5, -1			# Minus 1 from the toggle so it's zero now and we will deal with a row when we are back
+			move $a2, $s0
 			jal set_bomb				# Go to the function to set up the bomb
 
 		increment_map_address:				#
 			addi, $s3, $s3, 1			# Increment the address of the file buffer
 		b load_map_loop					# Return to the start of the loop
+
+	end_of_load:
+		beqz $s5, load_map_full_load
 
 	invalid_case:						#
 		li $v0, -1					# Load -1 in to return value so on return we know it failed
