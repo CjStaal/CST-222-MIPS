@@ -483,11 +483,11 @@ game_status:
 		b return_to_game_status_loop			#
 
 	check_win_condition:					#
-		addi $t5, $t2, $t4				#
-		beq $t5, MAX_CELLS, game_won			#
+		add $t5, $t2, $t4				#
+		beq $t5, MAX_CELLS, game_won_status		#
 		b game_ongoing					#
 
-	game_won:						#
+	game_won_status:					#
 		li $v0, 1					#
 		b game_status_end				#
 
