@@ -108,14 +108,14 @@
 .end_macro
 
 .macro zero_cell_array(%address)
-	li $t0, MAX_CELLS
+	li $t1, MAX_CELLS
 	li $t2, 0
 
 	zero_cell_array_loop:
-		beqz $t0, zero_cell_array_done
+		beqz $t1, zero_cell_array_done
 		sb $t2, 0(%address)
 		addi %address, %address, 1
-		addi $t0, $t0, -1
+		addi $t1, $t1, -1
 		b zero_cell_array_loop
 	zero_cell_array_done:
 .end_macro
@@ -137,14 +137,6 @@
 #################################################################
 # PART 1 FUNCTIONS
 #################################################################
-
-.globl main
-
-main:
-	jal smiley
-	nop
-	li $v0, 10
-	syscall
 
 smiley:
 	# t0 = Starting address
