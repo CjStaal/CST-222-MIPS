@@ -364,24 +364,13 @@ reveal_map:
 	la $s0, STARTING_ADDRESS				# Load the display starting address in to s0
 	move $s1, $a1						# Move the cell array address in to s1
 
-	li $s2, 100						# Load up the counter for the loop to remove the revealed bit
-
-	remove_reveals_loop:					#
-		beqz $s2, remove_reveals_loop_end		# If the counter = 0, we are done
-		lb $t0 0($s1)					# Load up the byte from the cell array in to t0
-		andi $t0, $t0, 63				# AND the byte with 63 to clear out the 5th bit
-		sb $t0, 0($s1)					# Store the byte back
-		addi $s1, $s1, 1				# Increment the cell array address by 1
-		addi $s2, $s2, -1				# Negate the counter by 1
-		b remove_reveals_loop				# Return to beginning of loop
-	remove_reveals_loop_end:				#
-
+	li $s2, 0						# Start counter at 0
 	move $s1, $a1						# Reset the cell array address in to s1
 		
 	reveal_loop:						#
 		beq $s2, 100, game_lost				# If the counter = 100, we are done
 		lb $t0, 0($s1)					# Load the byte from the cell array in to t0
-
+		andi $t0, $t0, 63				# AND the byte with 63 to clear out the 5th bit
 		beq $t0, CONT_BOMB, reveal_bomb			# If the byte = CONT_BOMB, then reveal a bomb
 		beq $t0, FLAGGED_BOMB, draw_correct_flag	# If the byte contains a flagged bomb, reveal a correct flag
 		beqz $t0, draw_empty_cell			# If the array is just 0, draw a default cell
@@ -392,7 +381,7 @@ reveal_map:
 		addi $s0, $s0, 2				# Increment the display address by 2
 		addi $s1, $s1, 1				# Increment the cell array address by 1
 		addi $s2, $s2, 1				# Increment counter by 1
-		b reveal_loop
+		b reveal_loop					# Return to loop
 
 	reveal_bomb:						#
 		li $t1, BOMB_ICON				# Load bomb icon to t1
@@ -455,8 +444,6 @@ reveal_map:
 #################################################################
 
 perform_action:
-
-	
 	jr $ra
 
 game_status:
