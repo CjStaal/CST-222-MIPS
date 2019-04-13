@@ -368,7 +368,7 @@ reveal_map:
 	reveal_loop:						#
 		beq $s2, 100, game_lost				# If the counter = 100, we are done
 		lb $t0, 0($s1)					# Load the byte from the cell array in to t0
-		andi $t0, $t0, 63				# AND the byte with 63 to clear out the 5th bit
+		andi $t0, $t0, 63				# AND the byte with 63 to clear out the 6th bit
 		beq $t0, CONT_BOMB, reveal_bomb			# If the byte = CONT_BOMB, then reveal a bomb
 		beq $t0, FLAGGED_BOMB, draw_correct_flag	# If the byte contains a flagged bomb, reveal a correct flag
 		beqz $t0, draw_empty_cell			# If the array is just 0, draw a default cell
