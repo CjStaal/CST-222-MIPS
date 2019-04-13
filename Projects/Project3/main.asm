@@ -7,7 +7,7 @@ invalid_action: .asciiz "The action performed is invalid."
 user_input: .space 1
 
 .align 3
-filename: .space 128
+filename: .space 4
 cells_array: .space 100
 
 .text
