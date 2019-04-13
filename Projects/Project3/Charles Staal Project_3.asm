@@ -60,14 +60,6 @@
 .eqv FLAG_ICON 70
 .eqv NULL_ICON 0
 
-# Icon colors
-.eqv EXPLODED_BOMB_COLOR 151
-.eqv BOMB_COLOR 7
-.eqv NUMBER_COLOR 13
-.eqv FLAG_COLOR 124
-.eqv CORRECT_FLAG_COLOR 172
-.eqv INCORRECT_FLAG_COLOR 28
-
 # Starting address for map
 .eqv STARTING_ADDRESS 4294901760
 
@@ -80,23 +72,18 @@
 .eqv CONT_FLAG 16
 .eqv CONT_BOMB 32
 .eqv CELL_REVEALED 64
+.eqv FLAGGED_BOMB 48
 
 # Quantities
 .eqv MAX_CELLS 100 
-.eqv MAX_BUFFER_SIZE 1024
+.eqv MAX_BUFFER_SIZE 256
 .eqv CHAR_TO_INT_VALUE -48
+.eqv INT_TO_CHAR_VALUE 48
 
 # Syscalls
-.eqv PRINT_INTEGER 1
-.eqv PRINT_STRING 4
-.eqv READ_INTEGER 5
-.eqv READ_STRING 8
-.eqv EXIT_PROGRAM 10
-.eqv PRINT_CHARACTER 11
 .eqv READ_CHARACTER 12
 .eqv OPEN_FILE 13
 .eqv READ_FROM_FILE 14
-.eqv WRITE_TO_FILE 15
 .eqv CLOSE_FILE 16
 
 #################################################################
@@ -139,7 +126,6 @@
 		addi %address, %address, 1
 		addi $t0, $t0, -1
 		b zero_cell_array_loop
-
 	zero_cell_array_done:
 .end_macro
 
@@ -155,7 +141,6 @@
 		addi $t3, $t3, -1				# Same as above
 		b map_loop					# Return to the start of the map default loop
 	map_done:						#
-	# We are done setting all cells to $icon and $color values
 .end_macro
 
 #################################################################
@@ -171,7 +156,6 @@ main:
 	syscall
 
 smiley:
-	# There are no arguments for this function
 	# t0 = Starting address
 	# t1 = icon of cell
 	# t2 = Color of cell background (high bits) and foreground (low bits)
@@ -237,7 +221,6 @@ open_file:
 	jr $ra							#
 
 close_file:
-	# There are no arguments for this function
 
 	li $v0, CLOSE_FILE					#
 	syscall							#
@@ -256,7 +239,7 @@ load_map:
 	# v0 = Returns -1 if error, else returns 0
 
 	pack_stack()						# Push the stack to preserve previous registers
-	move $t0, $a0
+	move $t0, $a1						#
 	zero_cell_array($t0)					# Make sure the cell array is all zero'd
 	move $s3, $a1						# s0 will be the base address of the cell array
 	li $s1, 0						# s1 will be the cell location/offset of the cell array
@@ -281,7 +264,6 @@ load_map:
 		blt $s4, '0', invalid_case			# If it's less than a '0', it's invalid now
 		bgt $s4, '9', invalid_case			# If it's higher than a '9' it's invalid now too
 		beq $s5, 1, column_load				# If it's toggled 1, we are dealing with a column
-		b row_load					# Else we are dealing with a row
 
 		row_load:					#
 			beqz $s4, load_map_full_load		# If it's null, and dealing with a row, we are done
@@ -307,7 +289,6 @@ load_map:
 
 	load_map_full_load:					#
 		li $v0, 0					# Load 0 in to return value so on return we know it was successful
-		b load_file_finished				# Go to the end of the function
 
 	load_file_finished:					#
 		unpack_stack()					# Pop the stack
@@ -318,8 +299,6 @@ load_map:
 #################################################################
 
 init_display:
-	# This function takes no arguments
-	# We do not need to save the stack as there are no nested functions
 
 	li $t1, NULL_ICON					# Loads the null icon to t1
 	li $t2, GRAY_BACKGROUND					# Loads a gray background to t2
@@ -368,6 +347,7 @@ set_cell:
 
 	sb $t2, 0($t5)						# Store the icon in to the address in t5
 	sb $t3, 1($t1)						# Store the color in to the address in t5 + 1
+
 	li $v0, 0						# There was no error, load 0 in to the return value
 	b set_cell_end						# Go to the end of the function
 
@@ -378,7 +358,107 @@ set_cell:
 	jr $ra							# Return to previous address
 
 reveal_map:
-	jr $ra
+	# a0 = -1 is lost, 0 is ongoing, 1 is won
+	# a1/s1 = Cell array address
+	# s0 = Display address
+	# s2 = Counter
+	# t0 = Byte from cell array
+	# t1 = Icon to be displayed
+	# t2 = Color to be displayed
+
+	pack_stack()						# We call a function at the end, so we must pack the stack
+
+	beq $a0, 0, reveal_map_end				# If it's a 0, the game is still ongoing
+	beq $a0, 1, game_won					# If it's a 1, we won the game and we just need to display the smiley, anything else and we lost the game
+	
+	la $s0, STARTING_ADDRESS				# Load the display starting address in to s0
+	move $s1, $a1						# Move the cell array address in to s1
+
+	li $s2, 100						# Load up the counter for the loop to remove the revealed bit
+
+	remove_reveals_loop:					#
+		beqz $s2, remove_reveals_loop_end		# If the counter = 0, we are done
+		lb $t0 0($s1)					# Load up the byte from the cell array in to t0
+		andi $t0, $t0, 63				# AND the byte with 63 to clear out the 5th bit
+		sb $t0, 0($s1)					# Store the byte back
+		addi $s1, $s1, 1				# Increment the cell array address by 1
+		addi $s2, $s2, -1				# Negate the counter by 1
+		b remove_reveals_loop				# Return to beginning of loop
+	remove_reveals_loop_end:				#
+
+	move $s1, $a1						# Reset the cell array address in to s1
+		
+	reveal_loop:						#
+		beq $s2, 100, game_lost				# If the counter = 100, we are done
+		lb $t0, 0($s1)					# Load the byte from the cell array in to t0
+
+		beq $t0, CONT_BOMB, reveal_bomb			# If the byte = CONT_BOMB, then reveal a bomb
+		beq $t0, FLAGGED_BOMB, draw_correct_flag	# If the byte contains a flagged bomb, reveal a correct flag
+		beqz $t0, draw_empty_cell			# If the array is just 0, draw a default cell
+		ble $t0, 8, draw_num				# If the array is between 1 and 8, draw a bright magenta number
+		b draw_incorrect_flag				# Else we know there is an incorrect flag there (by exhausting all other options)
+
+		return_to_reveal_loop:				#
+		addi $s0, $s0, 2				# Increment the display address by 2
+		addi $s1, $s1, 1				# Increment the cell array address by 1
+		addi $s2, $s2, 1				# Increment counter by 1
+		b reveal_loop
+
+	reveal_bomb:						#
+		li $t1, BOMB_ICON				# Load bomb icon to t1
+		li $t2, GRAY_FOREGROUND				# Load foreground color to t2, it is black background so we don't need to add it
+		sb $t1, 0($s0)					# Store the icon
+		sb $t2, 1($s0)					# Store the color
+		b return_to_reveal_loop				# Return to loop
+
+	draw_correct_flag:					#
+		li $t1, FLAG_ICON				# Load flag icon to t1
+		li $t2, BRIGHT_BLUE_FOREGROUND			# Load foreground color to t2
+		addi $t2, $t2, BRIGHT_GREEN_BACKGROUND		# Add background color to t2
+		sb $t1, 0($s0)					# Store the icon
+		sb $t2, 1($s0)					# Store the color
+		b return_to_reveal_loop				# Return to loop
+
+	draw_empty_cell
+		li $t1, DEFAULT_CELL_ICON			# Load default cell icon to t1
+		li $t2 DEFAULT_CELL_COLOR			# Load default color to t2
+		sb $t1, 0($s0)					# Store the icon
+		sb $t2, 1($s0)					# Store the color
+		b return_to_reveal_loop				# Return to loop
+
+	draw_num
+		addi $t1, $t0, INT_TO_CHAR_VALUE		# Add INT_TO_CHAT_VALUE to int value to obtain the number icon
+		li $t2, BRIGHT_MAGENTA_FOREGROUND		# Load foreground color to t2, it is a black background so we don't need to add it
+		sb $t1, 0($s0)					# Store the icon
+		sb $t2, 1($s0)					# Store the color
+		b return_to_reveal_loop				# Return to loop
+
+	draw_incorrect_flag:
+		li $t1, FLAG_ICON				# Load flag icon to t1
+		li $t2, BRIGHT_BLUE_FOREGROUND			# Load foreground color to t2
+		addi $t2, $t2, BRIGHT_RED_BACKGROUND		# Add background color to t2
+		sb $t1, 0($s0)					# Store the icon
+		sb $t2, 1($s0)					# Store the color
+		b return_to_reveal_loop				# Return to loop
+
+	game_lost:
+		lb $a0, Cursor_Row				# Load the cursors row value in to a0
+		lb $a1, Cursor_Column				# Load the cursors column value to a1
+		li $a2, BOMB_ICON				# Load bomb icon to a2
+		li $a3, WHITE_FOREGROUND			# Load white foreground to a3
+		li $t0, BRIGHT_RED_BACKGROUND			# Load bright red background to t0
+		addi $sp, $sp, -4				# Go in to the stack by 4
+		sw $s0, 0($sp)					# Store t0 in to the stack
+		jal set_cell					# Call set_cell to draw the exploded bomb
+		addi $sp, $sp, 4				# Come back up the stack
+		b reveal_map_end				# Go to end of function
+
+	game_won:						#
+		jal smiley					# We won, display a smiley
+
+	reveal_map_end:						#
+	unpack_stack()						# Unpack the stack
+	jr $ra							# Return to previous address
 
 #################################################################
 # PART 4 FUNCTIONS
@@ -404,7 +484,6 @@ search_cells:
 #################################################################
 
 set_bomb:
-	# This function returns no value
 	# t0/a0 = Row coord
 	# t1/a1 = Column coord
 	# t2/a2 = Cell array address	(Will then be cell array address + offset
@@ -428,8 +507,6 @@ set_bomb:
 	jr $ra							# Return to previous address
 
 set_adj_bomb:
-	# This function returns no value
-	# We do not need to push the stack as this function does not nest another
 	# t0/a0 = Row coord
 	# t1/a1 = Column coord
 	# t2/a2 = Cell array address
@@ -458,7 +535,6 @@ set_adj_bomb:
 		addi $t3, $t3, 1				# Increment row counter
 		li $t4, 0					# Reset column counter
 		b row_loop					# Return to beginning of row loop
-	row_loop_end:						#
 
 	add_cell_info:						#
 		add $t5, $t0, $t3				# Add row coord and row counter
@@ -476,7 +552,6 @@ set_adj_bomb:
 		addi $t7, $t7, ADJ_BOMB				# Else increment it by 1
 		sb $t7, 0($t2)					# Store the new byte in to the array
 		b return_to_column_loop				# Return to the column loop
-	add_info_end:						#
 
 	set_adj_bomb_finished:					#
 		jr $ra						# Return to previous address
