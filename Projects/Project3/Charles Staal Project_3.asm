@@ -363,9 +363,7 @@ reveal_map:
 	
 	la $s0, STARTING_ADDRESS				# Load the display starting address in to s0
 	move $s1, $a1						# Move the cell array address in to s1
-
 	li $s2, 0						# Start counter at 0
-	move $s1, $a1						# Reset the cell array address in to s1
 
 	reveal_loop:						#
 		beq $s2, 100, game_lost				# If the counter = 100, we are done
@@ -468,12 +466,12 @@ set_bomb:
 	# t4 = 10 for multiplication
 
 	pack_stack()						# Preserve the stack since there is a nested function
-
 	move $t0, $a0						# Move row coord to t0
 	move $t1, $a1						# move column coord to t1
 	move $t2, $a2						# move address of cell array in to t2
+
 	li $t3, CONT_BOMB					# Load info for containing a bomb
-	li $t4, 10
+	li $t4, 10						# Load 10 in to t4 to multiply
 	mul $t0, $t0, $t4					# Multiply row coord by 10
 	add $t2, $t2, $t0					# Add row to cell array address
 	add $t2, $t2, $t1					# Add column coord to the cell array address
