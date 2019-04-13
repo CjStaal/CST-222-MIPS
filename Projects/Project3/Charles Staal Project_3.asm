@@ -439,7 +439,9 @@ reveal_map:
 #################################################################
 
 perform_action:
-	jr $ra
+
+    jr $ra
+
 
 game_status:
 	# s0/a0 = Cell array address
@@ -448,65 +450,65 @@ game_status:
 	# t1 = Byte from cell array
 	# t2 = Number of boxes revealed
 	# t3 = Number of bombs
-	# t4 = Number of correct_flags
+	# t4 = Number of correct flags
 	# t5 = Scrap
 
-	move $s0, $a0						#
-	li $t2, 0						#
-	li $t3, 0						#
-	li $t4, 0						#
+	move $s0, $a0						# Move cell array address in to s0
+	li $t2, 0						# Set revealed counter to 0
+	li $t3, 0						# Set bomb counter to 0
+	li $t4, 0						# Set correct flag counter to 0
 
 	game_status_loop:					#
-		beq $t0, MAX_CELLS, check_win_condition		#
-		lb $t1, 0($s0)					#
-		andi $t5, $t1, CELL_REVEALED			#
-		beq $t5, CELL_REVEALED, check_revealed_cell	#
-		andi $t5, $t1, CONT_FLAG			#
-		beq $t5, CONT_FLAG, check_flagged_cell		#
-		andi $t5, $t1, CONT_BOMB			#
-		beq $t5, CONT_BOMB, game_ongoing		#
+		beq $t0, MAX_CELLS, check_win_condition		# If we are done going through the map, check the win condition
+		lb $t1, 0($s0)					# Load byte from cell array to t1
+		andi $t5, $t1, CELL_REVEALED			# AND the byte with CELL_REVEALED to check the 5th bit
+		beq $t5, CELL_REVEALED, check_revealed_cell	# If it's equal to itself, we know it's a revealed cell, now we must check if it's a bomb
+		andi $t5, $t1, CONT_FLAG			# AND the byte with CONT_FLAG to see if it's flagged
+		beq $t5, CONT_FLAG, check_flagged_cell		# If it's equal to itself, we know it contains a flag, we must check if that flag is correct
+		andi $t5, $t1, CONT_BOMB			# AND the byte with CONT_BOMB to see if it's a bomb
+		beq $t5, CONT_BOMB, game_ongoing		# If it is a bomb, we know it is not revealed, and not flagged, so the game is still on
 		return_to_game_status_loop:			#
-		addi $s0, $s0, 1				#
-		addi $t0, $t0, 1				#
+		addi $s0, $s0, 1				# Increment the cell array address by 1
+		addi $t0, $t0, 1				# Increment the counter by 1
 		b game_status_loop				#
 
 	check_revealed_cell:					#
-		andi $t5, $t1, CONT_BOMB			#
-		beq $t5, CONT_BOMB, game_lost_revealed_bomb	#
-		addi $t2, $t2, 1				#
-		b return_to_game_status_loop			#
+		andi $t5, $t1, CONT_BOMB			# Check to see if we revealed a bomb
+		beq $t5, CONT_BOMB, game_lost_revealed_bomb	# If we did reveal a bomb, we lost the game
+		addi $t2, $t2, 1				# Increment the revealed counter by 1
+		b return_to_game_status_loop			# Return to the status loop
 
 	check_flagged_cell:					#
-		andi $t5, $t1, CONT_BOMB			#
-		bne $t5, CONT_BOMB, game_ongoing		#
-		addi $t4, $t4, 1				#
-		b return_to_game_status_loop			#
+		andi $t5, $t1, CONT_BOMB			# Check to see if the flagged cell is correctly flagged
+		bne $t5, CONT_BOMB, game_ongoing		# If it is not correctly flagged, the game is stil on
+		addi $t4, $t4, 1				# If it is correctly flagged, increment the correct flag counter by 1
+		b return_to_game_status_loop			# Return to the status loop
 
 	check_win_condition:					#
-		add $t5, $t2, $t4				#
-		beq $t5, MAX_CELLS, game_won_status		#
-		b game_ongoing					#
+		add $t5, $t2, $t4				# Add the revealed cells and the correct flags together
+		bne $t5, MAX_CELLS, game_ongoing		# If it is not equal to max cells, we know the game is still going
 
 	game_won_status:					#
-		li $v0, 1					#
-		b game_status_end				#
+		li $v0, 1					# If the game is won, return 1
+		b game_status_end				# Go to the end of game_status
 
 	game_ongoing:						#
-		li $v0, 0					#
-		b game_status_end				#
+		li $v0, 0					# If the game is ongoing, return 0
+		b game_status_end				# Go to the end of game status
 
 	game_lost_revealed_bomb:				#
-		li $v0, -1					#
+		li $v0, -1					# If we revealed a bomb, we lost the game
 
 	game_status_end:					#
-	jr $ra							#
+	jr $ra							# Return to previous address
 
 #################################################################
 # PART 5 FUNCTIONS
 #################################################################
 
 search_cells:
-	jr $ra
+    jr $ra
+
 
 #################################################################
 # PART 6 STUDENT DEFINED FUNCTIONS
