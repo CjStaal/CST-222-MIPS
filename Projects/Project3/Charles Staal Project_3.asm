@@ -229,7 +229,7 @@ load_map:
 	# s5 = Toggle to load in to row or column. If 1 by the time we reach EOF we know there is a coord missing
 	# v0 = Returns -1 if error, else returns 0
 
-	pack_stack()						# Push the stack to preserve previous registers
+	pack_stack()						# Preserve the stack since there is a nested function
 	move $t0, $a1						#
 	zero_cell_array($t0)					# Make sure the cell array is all zero'd
 	move $s3, $a1						# s0 will be the base address of the cell array
@@ -282,7 +282,7 @@ load_map:
 		li $v0, 0					# Load 0 in to return value so on return we know it was successful
 
 	load_file_finished:					#
-		unpack_stack()					# Pop the stack
+		unpack_stack()					# Restore the stack
 		jr $ra						# Return to previous address
 
 #################################################################
@@ -343,10 +343,10 @@ set_cell:
 	b set_cell_end						# Go to the end of the function
 
 	set_cell_error:						# Go here if there is any error
-	li $v0, -1						# Load -1 in to the return value
+		li $v0, -1					# Load -1 in to the return value
 
 	set_cell_end:						# The end of the function
-	jr $ra							# Return to previous address
+		jr $ra						# Return to previous address
 
 reveal_map:
 	# a0 = -1 is lost, 0 is ongoing, 1 is won
@@ -357,8 +357,7 @@ reveal_map:
 	# t1 = Icon to be displayed
 	# t2 = Color to be displayed
 
-	pack_stack()						# We call a function at the end, so we must pack the stack
-
+	pack_stack()						# Preserve the stack since there is a nested function
 	beq $a0, 0, reveal_map_end				# If it's a 0, the game is still ongoing
 	beq $a0, 1, game_won					# If it's a 1, we won the game and we just need to display the smiley, anything else and we lost the game
 	
@@ -448,8 +447,8 @@ reveal_map:
 		jal smiley					# We won, display a smiley
 
 	reveal_map_end:						#
-	unpack_stack()						# Unpack the stack
-	jr $ra							# Return to previous address
+		unpack_stack()					# Restore the stack
+		jr $ra						# Return to previous address
 
 #################################################################
 # PART 4 FUNCTIONS
@@ -477,7 +476,7 @@ search_cells:
 set_bomb:
 	# t0/a0 = Row coord
 	# t1/a1 = Column coord
-	# t2/a2 = Cell array address	(Will then be cell array address + offset
+	# t2/a2 = Cell array address	(Will then be cell array address + offset)
 	# t3 = Cell information/bomb
 	# t4 = 10 for multiplication
 
@@ -494,7 +493,7 @@ set_bomb:
 	sb $t3, 0($t2)						# Store the bomb info to the address
 	jal set_adj_bomb					# Set adjacent cells to show distance to bomb
 
-	unpack_stack()						# Pop the stack
+	unpack_stack()						# Restore the stack
 	jr $ra							# Return to previous address
 
 set_adj_bomb:
