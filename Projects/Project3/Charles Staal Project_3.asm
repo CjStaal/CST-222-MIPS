@@ -46,15 +46,6 @@
 .eqv WHITE_BACKGROUND 240
 
 # Cell icons
-.eqv ZERO_ICON 48
-.eqv ONE_ICON 49
-.eqv TWO_ICON 50
-.eqv THREE_ICON 51
-.eqv FOUR_ICON 52
-.eqv FIVE_ICON 53
-.eqv SIX_ICON 54
-.eqv SEVEN_ICON 55
-.eqv EIGHT_ICON 56
 .eqv BOMB_ICON 66
 .eqv EXPLOSION_ICON 69
 .eqv FLAG_ICON 70
@@ -444,7 +435,7 @@ reveal_map:
 	game_lost:
 		lb $a0, Cursor_Row				# Load the cursors row value in to a0
 		lb $a1, Cursor_Column				# Load the cursors column value to a1
-		li $a2, BOMB_ICON				# Load bomb icon to a2
+		li $a2, EXPLOSION_ICON				# Load explosion icon to a2
 		li $a3, WHITE_FOREGROUND			# Load white foreground to a3
 		li $t0, BRIGHT_RED_BACKGROUND			# Load bright red background to t0
 		addi $sp, $sp, -4				# Go in to the stack by 4
