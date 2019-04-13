@@ -366,7 +366,7 @@ reveal_map:
 
 	li $s2, 0						# Start counter at 0
 	move $s1, $a1						# Reset the cell array address in to s1
-		
+
 	reveal_loop:						#
 		beq $s2, 100, game_lost				# If the counter = 100, we are done
 		lb $t0, 0($s1)					# Load the byte from the cell array in to t0
@@ -398,14 +398,14 @@ reveal_map:
 		sb $t2, 1($s0)					# Store the color
 		b return_to_reveal_loop				# Return to loop
 
-	draw_empty_cell
+	draw_empty_cell:
 		li $t1, DEFAULT_CELL_ICON			# Load default cell icon to t1
 		li $t2 DEFAULT_CELL_COLOR			# Load default color to t2
 		sb $t1, 0($s0)					# Store the icon
 		sb $t2, 1($s0)					# Store the color
 		b return_to_reveal_loop				# Return to loop
 
-	draw_num
+	draw_num:
 		addi $t1, $t0, INT_TO_CHAR_VALUE		# Add INT_TO_CHAT_VALUE to int value to obtain the number icon
 		li $t2, BRIGHT_MAGENTA_FOREGROUND		# Load foreground color to t2, it is a black background so we don't need to add it
 		sb $t1, 0($s0)					# Store the icon
@@ -422,7 +422,7 @@ reveal_map:
 
 	game_lost:
 		lb $a0, Cursor_Row				# Load the cursors row value in to a0
-		lb $a1, Cursor_Column				# Load the cursors column value to a1
+		lb $a1, Cursor_Col				# Load the cursors column value to a1
 		li $a2, EXPLOSION_ICON				# Load explosion icon to a2
 		li $a3, WHITE_FOREGROUND			# Load white foreground to a3
 		li $t0, BRIGHT_RED_BACKGROUND			# Load bright red background to t0
