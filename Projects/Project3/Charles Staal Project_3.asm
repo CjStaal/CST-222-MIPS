@@ -10,117 +10,117 @@
 #################################################################
 
 # Cell foreground colors
-.eqv BLACK_FOREGROUND 0
-.eqv RED_FOREGROUND 1
-.eqv GREEN_FOREGROUND 2
-.eqv BROWN_FOREGROUND 3
-.eqv BLUE_FOREGROUND 4
-.eqv MAGENTA_FOREGROUND 5
-.eqv CYAN_FOREGROUND 6
-.eqv GRAY_FOREGROUND 7
-.eqv DARK_GRAY_FOREGROUND 8
-.eqv BRIGHT_RED_FOREGROUND 9
-.eqv BRIGHT_GREEN_FOREGROUND 10
-.eqv YELLOW_FOREGROUND 11
-.eqv BRIGHT_BLUE_FOREGROUND 12
-.eqv BRIGHT_MAGENTA_FOREGROUND 13
-.eqv BRIGHT_CYAN_FOREGROUND 14
-.eqv WHITE_FOREGROUND 15
+.eqv BLACK_FOREGROUND 0						#
+.eqv RED_FOREGROUND 1						#
+.eqv GREEN_FOREGROUND 2						#
+.eqv BROWN_FOREGROUND 3						#
+.eqv BLUE_FOREGROUND 4						#
+.eqv MAGENTA_FOREGROUND 5					#
+.eqv CYAN_FOREGROUND 6						#
+.eqv GRAY_FOREGROUND 7						#
+.eqv DARK_GRAY_FOREGROUND 8					#
+.eqv BRIGHT_RED_FOREGROUND 9					#
+.eqv BRIGHT_GREEN_FOREGROUND 10					#
+.eqv YELLOW_FOREGROUND 11					#
+.eqv BRIGHT_BLUE_FOREGROUND 12					#
+.eqv BRIGHT_MAGENTA_FOREGROUND 13				#
+.eqv BRIGHT_CYAN_FOREGROUND 14					#
+.eqv WHITE_FOREGROUND 15					#
 
 # Cell background colors
-.eqv BLACK_BACKGROUND 0
-.eqv RED_BACKGROUND 16
-.eqv GREEN_BACKGROUND 32
-.eqv BROWN_BACKGROUND 48
-.eqv BLUE_BACKGROUND 64
-.eqv MAGENTA_BACKGROUND 80
-.eqv CYAN_BACKGROUND 96
-.eqv GRAY_BACKGROUND 112
-.eqv DARK_GRAY_BACKGROUND 128
-.eqv BRIGHT_RED_BACKGROUND 144
-.eqv BRIGHT_GREEN_BACKGROUND 160
-.eqv YELLOW_BACKGROUND 176
-.eqv BRIGHT_BLUE_BACKGROUND 192
-.eqv BRIGHT_MAGENTA_BACKGROUND 208
-.eqv BRIGHT_CYAN_BACKGROUND 224
-.eqv WHITE_BACKGROUND 240
+.eqv BLACK_BACKGROUND 0						#
+.eqv RED_BACKGROUND 16						#
+.eqv GREEN_BACKGROUND 32					#
+.eqv BROWN_BACKGROUND 48					#
+.eqv BLUE_BACKGROUND 64						#
+.eqv MAGENTA_BACKGROUND 80					#
+.eqv CYAN_BACKGROUND 96						#
+.eqv GRAY_BACKGROUND 112					#
+.eqv DARK_GRAY_BACKGROUND 128					#
+.eqv BRIGHT_RED_BACKGROUND 144					#
+.eqv BRIGHT_GREEN_BACKGROUND 160				#
+.eqv YELLOW_BACKGROUND 176					#
+.eqv BRIGHT_BLUE_BACKGROUND 192					#
+.eqv BRIGHT_MAGENTA_BACKGROUND 208				#
+.eqv BRIGHT_CYAN_BACKGROUND 224					#
+.eqv WHITE_BACKGROUND 240					#
 
 # Cell icons
-.eqv BOMB_ICON 66
-.eqv EXPLOSION_ICON 69
-.eqv FLAG_ICON 70
-.eqv NULL_ICON 0
+.eqv BOMB_ICON 66						#
+.eqv EXPLOSION_ICON 69						#
+.eqv FLAG_ICON 70						#
+.eqv NULL_ICON 0						#
 
 # Starting address for map
-.eqv STARTING_ADDRESS 4294901760
+.eqv STARTING_ADDRESS 4294901760				#
 
 # Default cell display state
-.eqv DEFAULT_CELL_COLOR 15
-.eqv DEFAULT_CELL_ICON 0
+.eqv DEFAULT_CELL_COLOR 15					#
+.eqv DEFAULT_CELL_ICON 0					#
 
 # Cell info
-.eqv ADJ_BOMB 1
-.eqv CONT_FLAG 16
-.eqv CONT_BOMB 32
-.eqv CELL_REVEALED 64
-.eqv FLAGGED_BOMB 48
-.eqv REVEALED_BOMB 96
+.eqv ADJ_BOMB 1							#
+.eqv CONT_FLAG 16						#
+.eqv CONT_BOMB 32						#
+.eqv CELL_REVEALED 64						#
+.eqv FLAGGED_BOMB 48						#
+.eqv REVEALED_BOMB 96						#
 
 # Quantities
-.eqv MAX_CELLS 100
-.eqv ROW_SIZE 10
-.eqv COLUMN_SIZE 10
-.eqv MAX_BUFFER_SIZE 256
-.eqv CHAR_TO_INT_VALUE -48
-.eqv INT_TO_CHAR_VALUE 48
+.eqv MAX_CELLS 100						#
+.eqv ROW_SIZE 10						#
+.eqv COLUMN_SIZE 10						#
+.eqv MAX_BUFFER_SIZE 256					#
+.eqv CHAR_TO_INT_VALUE -48					#
+.eqv INT_TO_CHAR_VALUE 48					#
 
 # Syscalls
-.eqv READ_CHARACTER 12
-.eqv OPEN_FILE 13
-.eqv READ_FROM_FILE 14
-.eqv CLOSE_FILE 16
+.eqv READ_CHARACTER 12						#
+.eqv OPEN_FILE 13						#
+.eqv READ_FROM_FILE 14						#
+.eqv CLOSE_FILE 16						#
 
 #################################################################
 # PART 0 MACROS
 #################################################################
 
 .macro pack_stack()
-	addi $sp, $sp, -36
-	sw $ra, 0($sp)
-	sw $s7, 4($sp)
-	sw $s6, 8($sp)
-	sw $s5, 12($sp)
-	sw $s4, 16($sp)
-	sw $s3, 20($sp)
-	sw $s2, 24($sp)
-	sw $s1, 28($sp)
-	sw $s0, 32($sp)
+	addi $sp, $sp, -36					#
+	sw $ra, 0($sp)						#
+	sw $s7, 4($sp)						#
+	sw $s6, 8($sp)						#
+	sw $s5, 12($sp)						#
+	sw $s4, 16($sp)						#
+	sw $s3, 20($sp)						#
+	sw $s2, 24($sp)						#
+	sw $s1, 28($sp)						#
+	sw $s0, 32($sp)						#
 .end_macro
 
 .macro unpack_stack()
-	lw $ra, 0($sp)
-	lw $s7, 4($sp)
-	lw $s6, 8($sp)
-	lw $s5, 12($sp)
-	lw $s4, 16($sp)
-	lw $s3, 20($sp)
-	lw $s2, 24($sp)
-	lw $s1, 28($sp)
-	lw $s0, 32($sp)
-	addi $sp, $sp, 36
+	lw $ra, 0($sp)						#
+	lw $s7, 4($sp)						#
+	lw $s6, 8($sp)						#
+	lw $s5, 12($sp)						#
+	lw $s4, 16($sp)						#
+	lw $s3, 20($sp)						#
+	lw $s2, 24($sp)						#
+	lw $s1, 28($sp)						#
+	lw $s0, 32($sp)						#
+	addi $sp, $sp, 36					#
 .end_macro
 
 .macro zero_cells_array(%address)
-	li $t1, MAX_CELLS
-	li $t2, 0
+	li $t1, MAX_CELLS					#
+	li $t2, 0						#
 
-	zero_cells_array_loop:
-		beqz $t1, zero_cells_array_done
-		sb $t2, 0(%address)
-		addi %address, %address, 1
-		addi $t1, $t1, -1
-		b zero_cells_array_loop
-	zero_cells_array_done:
+	zero_cells_array_loop:					#
+		beqz $t1, zero_cells_array_done			#
+		sb $t2, 0(%address)				#
+		addi %address, %address, 1			#
+		addi $t1, $t1, -1				#
+		b zero_cells_array_loop				#
+	zero_cells_array_done:					#
 .end_macro
 
 .macro set_all_cells(%icon, %color)
@@ -199,6 +199,7 @@ smiley:
 
 open_file:
 	# a0 = filename
+
 	li $a1, 0						#
 	li $a2, 0						#
 	li $v0, OPEN_FILE					#
@@ -270,8 +271,8 @@ load_map:
 			addi, $s3, $s3, 1			# Increment the address of the file buffer
 		b load_map_loop					# Return to the start of the loop
 
-	end_of_load:
-		beqz $s5, load_map_full_load
+	end_of_load:						#
+		beqz $s5, load_map_full_load			#
 
 	invalid_case:						#
 		li $v0, -1					# Load -1 in to return value so on return we know it failed
@@ -384,31 +385,31 @@ reveal_map:
 	reveal_bomb:						#
 		li $t1, BOMB_ICON				# Load bomb icon to t1
 		li $t2, GRAY_FOREGROUND				# Load foreground color to t2, it is black background so we don't need to add it
-		b draw
+		b draw						#
 
 	draw_correct_flag:					#
 		li $t1, FLAG_ICON				# Load flag icon to t1
 		li $t2, BRIGHT_BLUE_FOREGROUND			# Load foreground color to t2
 		addi $t2, $t2, BRIGHT_GREEN_BACKGROUND		# Add background color to t2
-		b draw
+		b draw						#
 
-	draw_empty_cell:
+	draw_empty_cell:					#
 		li $t1, DEFAULT_CELL_ICON			# Load default cell icon to t1
 		li $t2 DEFAULT_CELL_COLOR			# Load default color to t2
-		b draw
+		b draw						#
 
-	draw_num:
+	draw_number:						#
 		addi $t1, $t0, INT_TO_CHAR_VALUE		# Add INT_TO_CHAT_VALUE to int value to obtain the number icon
 		li $t2, BRIGHT_MAGENTA_FOREGROUND		# Load foreground color to t2, it is a black background so we don't need to add it
-		b draw
+		b draw						#
 
-	draw_incorrect_flag:
+	draw_incorrect_flag:					#
 		li $t1, FLAG_ICON				# Load flag icon to t1
 		li $t2, BRIGHT_BLUE_FOREGROUND			# Load foreground color to t2
 		addi $t2, $t2, BRIGHT_RED_BACKGROUND		# Add background color to t2
-		b draw
+		b draw						#
 
-	game_lost:
+	game_lost:						#
 		lb $a0, Cursor_Row				# Load the cursors row value in to a0
 		lb $a1, Cursor_Col				# Load the cursors column value to a1
 		li $a2, EXPLOSION_ICON				# Load explosion icon to a2
@@ -422,7 +423,7 @@ reveal_map:
 		addi $sp, $sp, 8				# Come back up the stack
 		b reveal_map_end				# Go to end of function
 
-	draw:
+	draw:							#
 		sb $t1, 0($s0)					# Store the icon
 		sb $t2, 1($s0)					# Store the color
 		b return_to_reveal_loop				# Return to loop
