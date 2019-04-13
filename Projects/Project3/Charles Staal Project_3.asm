@@ -333,7 +333,7 @@ set_cell:
 	add $t3, $t3, $t4					# Add the two colors together
 
 	sb $t2, 0($t5)						# Store the icon in to the address in t5
-	sb $t3, 1($t1)						# Store the color in to the address in t5 + 1
+	sb $t3, 1($t5)						# Store the color in to the address in t5 + 1
 
 	li $v0, 0						# There was no error, load 0 in to the return value
 	b set_cell_end						# Go to the end of the function
