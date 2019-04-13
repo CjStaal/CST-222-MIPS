@@ -366,7 +366,7 @@ reveal_map:
 	li $s2, 0						# Start counter at 0
 
 	reveal_loop:						#
-		beq $s2, MAX_CELLS, game_lost			# If the counter = 100, we are done
+		beq $s2, MAX_CELLS, game_lost			# If the counter = max cells, we are done
 		lb $t0, 0($s1)					# Load the byte from the cell array in to t0
 		andi $t0, $t0, 63				# AND the byte with 63 to clear out the 6th bit
 		beq $t0, CONT_BOMB, reveal_bomb			# If the byte = CONT_BOMB, then reveal a bomb
@@ -517,7 +517,7 @@ set_bomb:
 	# t1/a1 = Column coord
 	# t2/a2 = Cell array address	(Will then be cell array address + offset)
 	# t3 = Cell information/bomb
-	# t4 = 10 for multiplication
+	# t4 = Row size for multiplication
 
 	pack_stack()						# Preserve the stack since there is a nested function
 	move $t0, $a0						# Move row coord to t0
@@ -525,8 +525,8 @@ set_bomb:
 	move $t2, $a2						# move address of cell array in to t2
 
 	li $t3, CONT_BOMB					# Load info for containing a bomb
-	li $t4, 10						# Load 10 in to t4 to multiply
-	mul $t0, $t0, $t4					# Multiply row coord by 10
+	li $t4, ROW_SIZE					# Load row size in to t4 to multiply
+	mul $t0, $t0, $t4					# Multiply row coord by row size
 	add $t2, $t2, $t0					# Add row to cell array address
 	add $t2, $t2, $t1					# Add column coord to the cell array address
 	sb $t3, 0($t2)						# Store the bomb info to the address
