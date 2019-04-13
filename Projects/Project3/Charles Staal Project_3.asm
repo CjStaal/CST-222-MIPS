@@ -64,9 +64,12 @@
 .eqv CONT_BOMB 32
 .eqv CELL_REVEALED 64
 .eqv FLAGGED_BOMB 48
+.eqv REVEALED_BOMB 96
 
 # Quantities
-.eqv MAX_CELLS 100 
+.eqv MAX_CELLS 100
+.eqv ROW_SIZE 10
+.eqv COLUMN_SIZE 10
 .eqv MAX_BUFFER_SIZE 256
 .eqv CHAR_TO_INT_VALUE -48
 .eqv INT_TO_CHAR_VALUE 48
@@ -314,18 +317,19 @@ set_cell:
 	move $t3, $a3						# Move foreground color to t3
 	lw $t4, 0($sp)						# Load background color from stack to t4
 
-	bltz $t0, set_cell_error				# If row is less than zero
-	bltz $t1, set_cell_error				# Or row is greater than 9, return error
-	bgt $t0, 9, set_cell_error				# If column is less than zero
-	bgt $t1, 9, set_cell_error				# Or column is greater than 9, return error
+	bltz $t0, set_cell_error				# If row is < 0, return error
+	bltz $t1, set_cell_error				# If column is < 0, return error
+	bge $t0, ROW_SIZE, set_cell_error			# If row coord is > row size - 1, reteurn error
+	bge $t1, COLUMN_SIZE, set_cell_error			# If column coord is > column size - 1, return error
 	bltz $t3, set_cell_error				# If foreground color is less than 0
 	bgt $t3, 15, set_cell_error				# Or foreground color is greater than 15, return error
 	srl $t5, $t4, 4						# Shift background color code right by 4 bits so we can check the color easier
 	bltz $t5, set_cell_error				# If background color is less than 0
 	bgt $t5, 15, set_cell_error				# Or is background color is greater than 15, return error
 
-	li $t5, 20						# Load 20 in to t5 for multiplication
-	mul $t0, $t0, $t5					# Multiply row by 20 to get offset
+	li $t5, ROW_SIZE					# Load row size in to t5
+	sll $t5, $t5, 2						# Multiply row size by 2 to get true row size
+	mul $t0, $t0, $t5					# Multiply row by (row size * 2) to get offset
 	sll $t1, $t1, 2						# Shift column by 2 to multiply it by 2
 	addi $t5, $t1, STARTING_ADDRESS				# Add column and the display starting address in to t5
 	add $t5, $t5, $t0					# Add the row offset in to t5
@@ -362,7 +366,7 @@ reveal_map:
 	li $s2, 0						# Start counter at 0
 
 	reveal_loop:						#
-		beq $s2, 100, game_lost				# If the counter = 100, we are done
+		beq $s2, MAX_CELLS, game_lost			# If the counter = 100, we are done
 		lb $t0, 0($s1)					# Load the byte from the cell array in to t0
 		andi $t0, $t0, 63				# AND the byte with 63 to clear out the 6th bit
 		beq $t0, CONT_BOMB, reveal_bomb			# If the byte = CONT_BOMB, then reveal a bomb
@@ -380,39 +384,29 @@ reveal_map:
 	reveal_bomb:						#
 		li $t1, BOMB_ICON				# Load bomb icon to t1
 		li $t2, GRAY_FOREGROUND				# Load foreground color to t2, it is black background so we don't need to add it
-		sb $t1, 0($s0)					# Store the icon
-		sb $t2, 1($s0)					# Store the color
-		b return_to_reveal_loop				# Return to loop
+		b draw
 
 	draw_correct_flag:					#
 		li $t1, FLAG_ICON				# Load flag icon to t1
 		li $t2, BRIGHT_BLUE_FOREGROUND			# Load foreground color to t2
 		addi $t2, $t2, BRIGHT_GREEN_BACKGROUND		# Add background color to t2
-		sb $t1, 0($s0)					# Store the icon
-		sb $t2, 1($s0)					# Store the color
-		b return_to_reveal_loop				# Return to loop
+		b draw
 
 	draw_empty_cell:
 		li $t1, DEFAULT_CELL_ICON			# Load default cell icon to t1
 		li $t2 DEFAULT_CELL_COLOR			# Load default color to t2
-		sb $t1, 0($s0)					# Store the icon
-		sb $t2, 1($s0)					# Store the color
-		b return_to_reveal_loop				# Return to loop
+		b draw
 
 	draw_num:
 		addi $t1, $t0, INT_TO_CHAR_VALUE		# Add INT_TO_CHAT_VALUE to int value to obtain the number icon
 		li $t2, BRIGHT_MAGENTA_FOREGROUND		# Load foreground color to t2, it is a black background so we don't need to add it
-		sb $t1, 0($s0)					# Store the icon
-		sb $t2, 1($s0)					# Store the color
-		b return_to_reveal_loop				# Return to loop
+		b draw
 
 	draw_incorrect_flag:
 		li $t1, FLAG_ICON				# Load flag icon to t1
 		li $t2, BRIGHT_BLUE_FOREGROUND			# Load foreground color to t2
 		addi $t2, $t2, BRIGHT_RED_BACKGROUND		# Add background color to t2
-		sb $t1, 0($s0)					# Store the icon
-		sb $t2, 1($s0)					# Store the color
-		b return_to_reveal_loop				# Return to loop
+		b draw
 
 	game_lost:
 		lb $a0, Cursor_Row				# Load the cursors row value in to a0
@@ -420,11 +414,18 @@ reveal_map:
 		li $a2, EXPLOSION_ICON				# Load explosion icon to a2
 		li $a3, WHITE_FOREGROUND			# Load white foreground to a3
 		li $t0, BRIGHT_RED_BACKGROUND			# Load bright red background to t0
-		addi $sp, $sp, -4				# Go in to the stack by 4
-		sw $s0, 0($sp)					# Store t0 in to the stack
+		addi $sp, $sp, -8				# Go in to the stack by 8
+		sw $t0, 0($sp)					# Store t0 in to the stack
+		sw $ra, 4($sp)					#
 		jal set_cell					# Call set_cell to draw the exploded bomb
-		addi $sp, $sp, 4				# Come back up the stack
+		lw $ra, 0($sp)					#
+		addi $sp, $sp, 8				# Come back up the stack
 		b reveal_map_end				# Go to end of function
+
+	draw:
+		sb $t1, 0($s0)					# Store the icon
+		sb $t2, 1($s0)					# Store the color
+		b return_to_reveal_loop				# Return to loop
 
 	game_won:						#
 		jal smiley					# We won, display a smiley
@@ -441,7 +442,64 @@ perform_action:
 	jr $ra
 
 game_status:
-	jr $ra
+	# s0/a0 = Cell array address
+	# v0 = -1 if lost, 0 if ongoing, 1 if won
+	# t0 = Counter
+	# t1 = Byte from cell array
+	# t2 = Number of boxes revealed
+	# t3 = Number of bombs
+	# t4 = Number of correct_flags
+	# t5 = Scrap
+
+	move $s0, $a0						#
+	li $t2, 0						#
+	li $t3, 0						#
+	li $t4, 0						#
+
+	game_status_loop:					#
+		beq $t0, MAX_CELLS, check_win_condition		#
+		lb $t1, 0($s0)					#
+		andi $t5, $t1, CELL_REVEALED			#
+		beq $t5, CELL_REVEALED, check_revealed_cell	#
+		andi $t5, $t1, CONT_FLAG			#
+		beq $t5, CONT_FLAG, check_flagged_cell		#
+		andi $t5, $t1, CONT_BOMB			#
+		beq $t5, CONT_BOMB, game_ongoing		#
+		return_to_game_status_loop:			#
+		addi $s0, $s0, 1				#
+		addi $t0, $t0, 1				#
+		b game_status_loop				#
+
+	check_revealed_cell:					#
+		andi $t5, $t1, CONT_BOMB			#
+		beq $t5, CONT_BOMB, game_lost_revealed_bomb	#
+		addi $t2, $t2, 1				#
+		b return_to_game_status_loop			#
+
+	check_flagged_cell:					#
+		andi $t5, $t1, CONT_BOMB			#
+		bne $t5, CONT_BOMB, game_ongoing		#
+		addi $t4, $t4, 1				#
+		b return_to_game_status_loop			#
+
+	check_win_condition:					#
+		addi $t5, $t2, $t4				#
+		beq $t5, MAX_CELLS, game_won			#
+		b game_ongoing					#
+
+	game_won:						#
+		li $v0, 1					#
+		b game_status_end				#
+
+	game_ongoing:						#
+		li $v0, 0					#
+		b game_status_end				#
+
+	game_lost_revealed_bomb:				#
+		li $v0, -1					#
+
+	game_status_end:					#
+	jr $ra							#
 
 #################################################################
 # PART 5 FUNCTIONS
@@ -485,7 +543,7 @@ set_adj_bomb:
 	# t4 = Column counter
 	# t5 = Row coord + row counter
 	# t6 = Column coord + column counter
-	# t7 = 10 for multiplication
+	# t7 = row size for multiplication
 
 	move $t0, $a0						# Move row coord to t0
 	move $t1, $a1						# Move column cord to t1
@@ -512,11 +570,12 @@ set_adj_bomb:
 		add $t6, $t1, $t4				# Add column coord and column counter
 		bltz $t5, return_to_row_loop			# If the row coord now is less than 0, we are off the grid
 		bltz $t6, return_to_column_loop			# If the column coord now is less than 0, we are off the grid
-		bgt $t5, 9, return_to_row_loop			# If the row coord now is more than 9, we are off the grid
-		bgt $t6, 9, return_to_column_loop		# If the column coord now is more than 9, we are off the grid
+		bge $t5, ROW_SIZE, return_to_row_loop		# If the row coord now is more than (row size - 1), we are off the grid
+		bgt $t6, COLUMN_SIZE, return_to_column_loop	# If the column coord now is more than (column size - 1), we are off the grid
 		move $t2, $a2					# Move the cell array address in to t2
 		add $t2, $t2, $t6				# Add the cell array address and column coord
-		mul $t5, $t5, $t7				# Multiply row by 10
+		li $t7, ROW_SIZE				# Load row size to t7 for multiplication
+		mul $t5, $t5, $t7				# Multiply row by row size
 		add $t2, $t2, $t5				# Add to cell array address
 		lb $t7, 0($t2)					# Load the byte from the address of cell array
 		beq $t7, CONT_BOMB, return_to_column_loop	# If it is equal to a bomb, don't do anything and return to the column loop
