@@ -498,7 +498,7 @@ perform_action:
 		li $t2, EXPLOSION_ICON
 		sb $t1, 0($s5)
 		sb $t2, 1($s5)
-		b perform_action_end
+		b perform_action_valid_input
 
 		
 	draw_default_cell:
@@ -506,14 +506,14 @@ perform_action:
 		li $t2, DEFAULT_CELL_COLOR
 		sb $t1, 0($s5)
 		sb $t2, 1($s5)
-		b perform_action_end
+		b perform_action_valid_input
 
 	draw_number_cell:
 		addi $t1, $t1, INT_TO_CHAR_VALUE
 		li $t2, BRIGHT_MAGENTA_FOREGROUND
 		sb $t1, 0($s5)
 		sb $t2, 1($s5)
-		b perform_action_end
+		b perform_action_valid_input
 
 	skip_explosion:
 		andi $t1, $t0, CONT_FLAG
@@ -533,13 +533,13 @@ perform_action:
 		li $t2, FLAG_ICON
 		sb $t1, 0($s5)
 		sb $t2, 1($s5)
-		b perform_action_end
+		b perform_action_valid_input
 
 	remove_flag:
 		xori $t0, $t0, CONT_FLAG
 		jal reset_current_cell
 		sb $t0, 0($s4)
-		b perform_action_end
+		b perform_action_valid_input
 
 	move_up:
 		addi $s6, $s2, -1
@@ -583,8 +583,11 @@ perform_action:
 		andi $t2, $t2, 15
 		addi $t2, $t2, YELLOW_BACKGROUND
 		sb $t2, 1($s5)
-		b perform_action_end
+		b perform_action_valid_input
 
+	perform_action_valid_input:
+		li $v0, 0
+		b perform_action_end
 	erronous_input:
 		li $v0, -1
 		b perform_action_end
