@@ -451,160 +451,159 @@ perform_action:
 	# t0 = Scrap
 	# v0 = 0 for valid move, -1 for invalid
 
-	pack_stack()
-	li $v0, 0
-	move $s1, $a1
-	move $s0, $a0
-	lb $s2, Cursor_Row
-	lb $s3, Cursor_Col
+	pack_stack()						#
+	li $v0, 0						#
+	move $s1, $a1						#
+	move $s0, $a0						#
+	lb $s2, Cursor_Row					#
+	lb $s3, Cursor_Col					#
+	move $s6, $s2						#
+	move $s7, $s3						#
+	li $t0, ROW_SIZE					#
+	mul $s4, $s2, $t0					#
+	add $s4, $s4, $s3					#
+	add $s4, $s0, $s4					#
 
-	li $t0, ROW_SIZE
-	mul $s4, $s2, $t0
-	add $s4, $s4, $s3
-	add $s4, $s0, $s4
+	mul $s5, $s2, $t0					#
+	sll $s5, $s5, 1						#
+	sll $t0, $s3, 1						#
+	add $s5, $s5, $t0					#
+	addi $s5, $s5, STARTING_ADDRESS				#
 
-	mul $s5, $s2, $t0
-	sll $s5, $s5, 1
-	sll $t0, $s3, 1
-	add $s5, $s5, $t0
-	addi $s5, $s5, STARTING_ADDRESS
+	andi $s1, $s1, '_'					# Will make sure the case is uppercase
+	beq $s1, 'R', reveal					#
+	beq $s1, 'F', flag					#
+	beq $s1, 'W' move_up					#
+	beq $s1, 'A', move_left					#
+	beq $s1, 'S', move_down					#
+	beq $s1, 'D', move_right				#
+	b erronous_input					#
 
-	andi $s1, $s1, '_'			# Will make sure the case is uppercase
-	beq $s1, 'R', reveal
-	beq $s1, 'F', flag
-	beq $s1, 'W' move_up
-	beq $s1, 'A', move_left
-	beq $s1, 'S', move_down
-	beq $s1, 'D', move_right
-	b erronous_input
+	reveal:							#
+		lb $t0, 0($s4)					#
+		ori $t0, $t0, CELL_REVEALED			# Need to rewrite this
+		sb $t0, 0($s4)					#
+		andi $t1, $t0, CONT_BOMB			#
+		beq $t1, CONT_BOMB, reveal_action_bomb		#
+		andi $t1, $t0, CONT_FLAG			#
+		bne $t1, CONT_FLAG, skip_reveal_flag		#
+		xori $t0, $t0, CONT_FLAG			#
+		skip_reveal_flag:				#
+		andi $t0, $t0, 15				#
+		beqz $t0, draw_default_cell			#
+		blt $t0, 9, draw_number_cell			#
+		bge $t0, 9, erronous_input			#
 
-	reveal:
-		lb $t0, 0($s4)
-		ori $t0, $t0, CELL_REVEALED
-		andi $t1, $t0, CONT_BOMB
-		beq $t1, CONT_BOMB, reveal_action_bomb
-		andi $t1, $t0, CONT_FLAG
-		bne $t1, CONT_FLAG, skip_reveal_flag
-		xori $t0, $t0, CONT_FLAG
-		skip_reveal_flag:
-		sb $t0, 0($s4)
-		andi $t0, $t0, 15
-		beqz $t0, draw_default_cell
-		blt $t0, 9, draw_number_cell
-		bge $t0, 9, erronous_input
+	reveal_action_bomb:					#
+		li $t1, BRIGHT_RED_BACKGROUND			#
+		addi $t1, $t1, WHITE_FOREGROUND			#
+		li $t2, EXPLOSION_ICON				#
+		sb $t1, 0($s5)					#
+		sb $t2, 1($s5)					#
+		b perform_action_valid_input			#
 
-	reveal_action_bomb:
-		sb $t0, 0($s4)
-		li $t1, BRIGHT_RED_BACKGROUND
-		addi $t1, $t1, WHITE_FOREGROUND
-		li $t2, EXPLOSION_ICON
-		sb $t1, 0($s5)
-		sb $t2, 1($s5)
-		b perform_action_valid_input
+	draw_default_cell:					#
+		li $t1, DEFAULT_CELL_ICON			#
+		li $t2, DEFAULT_CELL_COLOR			#
+		sb $t1, 0($s5)					#
+		sb $t2, 1($s5)					#
+		b perform_action_valid_input			#
 
-		
-	draw_default_cell:
-		li $t1, DEFAULT_CELL_ICON
-		li $t2, DEFAULT_CELL_COLOR
-		sb $t1, 0($s5)
-		sb $t2, 1($s5)
-		b perform_action_valid_input
+	draw_number_cell:					#
+		addi $t1, $t1, INT_TO_CHAR_VALUE		#
+		li $t2, BRIGHT_MAGENTA_FOREGROUND		#
+		sb $t1, 0($s5)					#
+		sb $t2, 1($s5)					#
+		b perform_action_valid_input			#
 
-	draw_number_cell:
-		addi $t1, $t1, INT_TO_CHAR_VALUE
-		li $t2, BRIGHT_MAGENTA_FOREGROUND
-		sb $t1, 0($s5)
-		sb $t2, 1($s5)
-		b perform_action_valid_input
+	skip_explosion:						#
+		andi $t1, $t0, CONT_FLAG			#
+		beq $t1, CONT_FLAG, erronous_input		#
+		andi $t1, $t0, 15				#
+		beqz $t1, draw_default_cell			#
+		ble, $t1, 8, draw_number_cell			#
+		bgt $t1, 8, erronous_input			#
 
-	skip_explosion:
-		andi $t1, $t0, CONT_FLAG
-		beq $t1, CONT_FLAG, erronous_input
-		andi $t1, $t0, 15
-		beqz $t1, draw_default_cell
-		ble, $t1, 8, draw_number_cell
-		bgt $t1, 8, erronous_input
-	flag:
-		lb $t0, 0($s4)
-		andi $t1, $t0, CONT_FLAG
-		beq, $t1, CONT_FLAG, remove_flag
-		ori $t0, $t0, CONT_FLAG
-		sb $t0, 0($s4)
-		li $t1, GRAY_BACKGROUND
-		addi $t1, $t1, BRIGHT_BLUE_FOREGROUND
-		li $t2, FLAG_ICON
-		sb $t1, 0($s5)
-		sb $t2, 1($s5)
-		b perform_action_valid_input
+	flag:							#
+		lb $t0, 0($s4)					#
+		andi $t1, $t0, CONT_FLAG			#
+		beq, $t1, CONT_FLAG, remove_flag		#
+		ori $t0, $t0, CONT_FLAG				#
+		sb $t0, 0($s4)					#
+		li $t1, GRAY_BACKGROUND				#
+		addi $t1, $t1, BRIGHT_BLUE_FOREGROUND		#
+		li $t2, FLAG_ICON				#
+		sb $t1, 0($s5)					#
+		sb $t2, 1($s5)					#
+		b perform_action_valid_input			#
 
-	remove_flag:
-		xori $t0, $t0, CONT_FLAG
-		sb $t0, 0($s4)
-		move $a1, $s2
-		move $a2, $s3
-		jal reset_current_cell
-		b perform_action_valid_input
+	remove_flag:						#
+		xori $t0, $t0, CONT_FLAG			#
+		sb $t0, 0($s4)					#
+		move $a1, $s2					#
+		move $a2, $s3					#
+		jal reset_current_cell				#
+		b perform_action_valid_input			#
 
-	move_up:
-		addi $s6, $s2, -1
-		bltz $s6, erronous_input
-		move $a1, $s2
-		move $a2, $s3
-		jal reset_current_cell
-		sb $s6, Cursor_Row
-		li $t0, ROW_SIZE
-		sll $t0, $t0, 1
-		sub $s5, $s5, $t0
-		b draw_cursor
-		
-	move_left:
-		addi $s7, $s3, -1
-		bltz $s7, erronous_input
-		move $a1, $s2
-		move $a2, $s3
-		jal reset_current_cell
-		sb $s7, Cursor_Row
-		li $t0, 2
-		sub $s5, $s5, $t0
-		b draw_cursor
+	move_up:						#
+		addi $s6, $s2, -1				#
+		bltz $s6, erronous_input			#
+		move $a1, $s2					#
+		move $a2, $s3					#
+		jal reset_current_cell				#
+		li $t0, ROW_SIZE				#
+		sll $t0, $t0, 1					#
+		sub $s5, $s5, $t0				#
+		b draw_cursor					#
 
-	move_down:
-		addi $s6, $s2, 1
-		bge $s6, ROW_SIZE, erronous_input
-		move $a1, $s2
-		move $a2, $s3
-		jal reset_current_cell
-		sb $s6, Cursor_Row
-		li $t0, ROW_SIZE
-		sll $t0, $t0, 1
-		add $s5, $s5, $t0
-		b draw_cursor
+	move_left:						#
+		addi $s7, $s3, -1				#
+		bltz $s7, erronous_input			#
+		move $a1, $s2					#
+		move $a2, $s3					#
+		jal reset_current_cell				#
+		li $t0, 2					#
+		sub $s5, $s5, $t0				#
+		b draw_cursor					#
 
-	move_right:
-		addi $s7, $s3, 1
-		bge $s7, COLUMN_SIZE, erronous_input
-		jal reset_current_cell
-		sb $s7, Cursor_Row
-		addi $s5, $s5, 1
-		b draw_cursor
+	move_down:						#
+		addi $s6, $s2, 1				#
+		bge $s6, ROW_SIZE, erronous_input		#
+		move $a1, $s2					#
+		move $a2, $s3					#
+		jal reset_current_cell				#
+		li $t0, ROW_SIZE				#
+		sll $t0, $t0, 1					#
+		add $s5, $s5, $t0				#
+		b draw_cursor					#
 
-	draw_cursor:
-		lb $t2, 1($s5)
-		andi $t2, $t2, 15
-		addi $t2, $t2, YELLOW_BACKGROUND
-		sb $t2, 1($s5)
-		b perform_action_valid_input
+	move_right:						#
+		addi $s7, $s3, 1				#
+		bge $s7, COLUMN_SIZE, erronous_input		#
+		jal reset_current_cell				#
+		addi $s5, $s5, 2				#
+		b draw_cursor					#
 
-	perform_action_valid_input:
-		li $v0, 0
-		b perform_action_end
-	erronous_input:
-		li $v0, -1
-		b perform_action_end
+	draw_cursor:						#
+		lb $t2, 1($s5)					#
+		andi $t2, $t2, 15				#
+		addi $t2, $t2, YELLOW_BACKGROUND		#
+		sb $t2, 1($s5)					#
+		sb $s6, Cursor_Row				#
+		sb $s7, Cursor_Col				#
+		b perform_action_valid_input			#
 
-	perform_action_end:
-	unpack_stack()
-	jr $ra
+	perform_action_valid_input:				#
+		li $v0, 0					#
+		b perform_action_end				#
+
+	erronous_input:						#
+		li $v0, -1					#
+		b perform_action_end				#
+
+	perform_action_end:					#
+	unpack_stack()						#
+	jr $ra							#
 
 
 game_status:
