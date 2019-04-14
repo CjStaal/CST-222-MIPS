@@ -73,9 +73,8 @@
 .eqv MAX_BUFFER_SIZE 256					#
 .eqv CHAR_TO_INT_VALUE -48					#
 .eqv INT_TO_CHAR_VALUE 48					#
-
+.eqv LOWER_TO_UPPER_VALUE 32					#
 # Syscalls
-.eqv READ_CHARACTER 12						#
 .eqv OPEN_FILE 13						#
 .eqv READ_FROM_FILE 14						#
 .eqv CLOSE_FILE 16						#
@@ -136,6 +135,7 @@
 		b map_loop					# Return to the start of the map default loop
 	map_done:						#
 .end_macro
+
 
 #################################################################
 # PART 1 FUNCTIONS
@@ -373,7 +373,7 @@ reveal_map:
 		beq $t0, CONT_BOMB, reveal_bomb			# If the byte = CONT_BOMB, then reveal a bomb
 		beq $t0, FLAGGED_BOMB, draw_correct_flag	# If the byte contains a flagged bomb, reveal a correct flag
 		beqz $t0, draw_empty_cell			# If the array is just 0, draw a default cell
-		ble $t0, 8, draw_num				# If the array is between 1 and 8, draw a bright magenta number
+		ble $t0, 8, draw_number				# If the array is between 1 and 8, draw a bright magenta number
 		b draw_incorrect_flag				# Else we know there is an incorrect flag there (by exhausting all other options)
 
 		return_to_reveal_loop:				#
@@ -440,8 +440,158 @@ reveal_map:
 #################################################################
 
 perform_action:
+	# s0/a0 = cells_array address
+	# s1/a1 = Input (char)
+	# s2 = Cursor_Row
+	# s3 = Cursor_Col
+	# s4 = cells_array address of cell
+	# s5 = Display address of cell
+	# s6 = New Cursor_Row
+	# s7 = New Cursor_Col
+	# t0 = Scrap
+	# v0 = 0 for valid move, -1 for invalid
 
-    jr $ra
+	pack_stack()
+	li $v0, 0
+	lb $s2, Cursor_Row
+	lb $s3, Cursor_Col
+
+	li $t0, ROW_SIZE
+	mul $s4, $s2, $t0
+	add $s4, $s4, $s3
+	add $s4, $s0, $s4
+
+	mul $s5, $s2, $t0
+	sll $s5, $s5, 2
+	sll $t0, $s3, 2
+	add $s5, $s5, $t0
+	addi $s5, $s5, STARTING_ADDRESS
+
+	ori $s1, $s1, LOWER_TO_UPPER_VALUE			# Will make sure the case is uppercase
+	beq $s1, 'R', reveal
+	beq $s1, 'F', flag
+	beq $s1, 'w' move_up
+	beq $s1, 'A', move_left
+	beq $s1, 'S', move_down
+	beq $s1, 'D', move_right
+	b erronous_input
+
+	reveal:
+		lb $t0, 0($s4)
+		ori $t0, $t0, CELL_REVEALED
+		andi $t1, $t0, CONT_BOMB
+		beq $t1, CONT_BOMB, reveal_action_bomb
+		andi $t1, $t0, CONT_FLAG
+		bne $t1, CONT_FLAG, skip_reveal_flag
+		xori $t0, $t0, CONT_FLAG
+		skip_reveal_flag:
+		sb $t0, 0($s4)
+		andi $t0, $t0, 15
+		beqz $t0, draw_default_cell
+		blt $t0, 9, draw_number_cell
+		bge $t0, 9, erronous_input
+
+	reveal_action_bomb:
+		sb $t0, 0($s4)
+		li $t1, BRIGHT_RED_BACKGROUND
+		addi $t1, $t1, WHITE_FOREGROUND
+		li $t2, EXPLOSION_ICON
+		sb $t1, 0($s5)
+		sb $t2, 1($s5)
+		b perform_action_end
+
+		
+	draw_default_cell:
+		li $t1, DEFAULT_CELL_ICON
+		li $t2, DEFAULT_CELL_COLOR
+		sb $t1, 0($s5)
+		sb $t2, 1($s5)
+		b perform_action_end
+
+	draw_number_cell:
+		addi $t1, $t1, INT_TO_CHAR_VALUE
+		li $t2, BRIGHT_MAGENTA_FOREGROUND
+		sb $t1, 0($s5)
+		sb $t2, 1($s5)
+		b perform_action_end
+
+	skip_explosion:
+		andi $t1, $t0, CONT_FLAG
+		beq $t1, CONT_FLAG, erronous_input
+		andi $t1, $t0, 15
+		beqz $t1, draw_default_cell
+		ble, $t1, 8, draw_number_cell
+		bgt $t1, 8, erronous_input
+	flag:
+		lb $t0, 0($s4)
+		andi $t1, $t0, CONT_FLAG
+		beq, $t1, CONT_FLAG, remove_flag
+		ori $t0, $t0, CONT_FLAG
+		sb $t0, 0($s4)
+		li $t1, GRAY_BACKGROUND
+		addi $t1, $t1, BRIGHT_BLUE_FOREGROUND
+		li $t2, FLAG_ICON
+		sb $t1, 0($s5)
+		sb $t2, 1($s5)
+		b perform_action_end
+
+	remove_flag:
+		xori $t0, $t0, CONT_FLAG
+		jal reset_current_cell
+		sb $t0, 0($s4)
+		b perform_action_end
+
+	move_up:
+		addi $s6, $s2, -1
+		bltz $s6, erronous_input
+		jal reset_current_cell
+		sb $s6, Cursor_Row
+		li $t0, ROW_SIZE
+		sll $t0, $t0, 2
+		sub $s5, $s5, $t0
+		b draw_cursor
+		
+	move_left:
+		addi $s7, $s3, -1
+		bltz $s7, erronous_input
+		jal reset_current_cell
+		sb $s7, Cursor_Row
+		li $t0, 2
+		sub $s5, $s5, $t0
+		b draw_cursor
+
+	move_down:
+		addi $s6, $s2, 1
+		bge $s6, ROW_SIZE, erronous_input
+		jal reset_current_cell
+		sb $s6, Cursor_Row
+		li $t0, ROW_SIZE
+		sll $t0, $t0, 2
+		add $s5, $s5, $t0
+		b draw_cursor
+
+	move_right:
+		addi $s7, $s3, 1
+		bge $s7, COLUMN_SIZE, erronous_input
+		jal reset_current_cell
+		sb $s7, Cursor_Row
+		addi $s5, $s5, 2
+		b draw_cursor
+
+	draw_cursor:
+		lb $t2, 1($s5)
+		andi $t2, $t2, 15
+		addi $t2, $t2, YELLOW_BACKGROUND
+		sb $t2, 1($s5)
+		b perform_action_end
+
+	erronous_input:
+		li $v0, -1
+		b perform_action_end
+
+	perform_action_end:
+	unpack_stack()
+	jr $ra
 
 
 game_status:
@@ -514,7 +664,68 @@ search_cells:
 #################################################################
 # PART 6 STUDENT DEFINED FUNCTIONS
 #################################################################
+reset_current_cell:
+	# a0 = cells_array address
+	# t0 = Cursor row
+	# t1 = Cursor Column
+	# t2 = Display address + offset
+	# t3 = cells_array address + offset
+	# t4 = Byte from cells_array
+	# t5 = Scrap
 
+	lb $t0, Cursor_Row
+	lb $t1, Cursor_Col
+
+	li $t5, ROW_SIZE
+	mul $t2, $t0, $t5
+	sll $t2, $t2, 2
+	sll $t3, $t1, 2
+	add $t2, $t2, $t3
+	addi $t2, $t2, STARTING_ADDRESS
+
+	mul $t3, $t0, $t5
+	add $t3, $t3, $t1
+	add $t3, $t3, $a0
+
+	lb $t4, 0($t3)
+
+	andi $t5, $t4, CONT_FLAG
+	beq $t5, CONT_FLAG, draw_flag
+
+	andi $t5, $t4, CELL_REVEALED
+	bne $t5, CELL_REVEALED, set_cell_to_hidden
+
+	andi $t5, $t4, 15
+	beqz $t5, set_cell_black
+	blt $t5, 9, set_cell_num
+	bge $t5, 9, set_cell_black
+
+	set_cell_black:
+		li $t5, NULL_ICON
+		li $t6, BLACK_BACKGROUND
+		b draw_current_cell
+
+	set_cell_num:
+		addi $t5, $t5, INT_TO_CHAR_VALUE
+		li $t6, BRIGHT_MAGENTA_FOREGROUND
+		addi $t6, $t6, BLACK_BACKGROUND
+		b draw_current_cell
+	
+	draw_flag:
+		li $t5, FLAG_ICON
+		li $t6, BRIGHT_MAGENTA_FOREGROUND
+		addi $t6, $t6, GRAY_BACKGROUND
+		b draw_current_cell
+	set_cell_to_hidden:
+		li $t5, NULL_ICON
+		li $t6, GRAY_FOREGROUND
+		addi $t6, $t6, GRAY_BACKGROUND
+		b draw_current_cell
+	draw_current_cell:
+		sb $t5, 0($t2)
+		sb $t6, 1($t2)
+	reset_current_cell_end:
+	jr $ra
 set_bomb:
 	# t0/a0 = Row coord
 	# t1/a1 = Column coord
