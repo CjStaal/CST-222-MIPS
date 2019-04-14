@@ -329,9 +329,9 @@ set_cell:
 	bgt $t5, 15, set_cell_error				# Or is background color is greater than 15, return error
 
 	li $t5, ROW_SIZE					# Load ROW_SIZE in to t5
-	sll $t5, $t5, 2						# Multiply ROW_SIZE by 2 to get true ROW_SIZE
+	sll $t5, $t5, 1						# Multiply ROW_SIZE by 2 to get true ROW_SIZE
 	mul $t0, $t0, $t5					# Multiply row by (ROW_SIZE * 2) to get offset
-	sll $t1, $t1, 2						# Shift column by 2 to multiply it by 2
+	sll $t1, $t1, 1						# Shift column by 2 to multiply it by 2
 	addi $t5, $t1, STARTING_ADDRESS				# Add column and the display starting address in to t5
 	add $t5, $t5, $t0					# Add the row offset in to t5
 
@@ -453,6 +453,8 @@ perform_action:
 
 	pack_stack()
 	li $v0, 0
+	move $s1, $a1
+	move $s0, $a0
 	lb $s2, Cursor_Row
 	lb $s3, Cursor_Col
 
@@ -462,15 +464,15 @@ perform_action:
 	add $s4, $s0, $s4
 
 	mul $s5, $s2, $t0
-	sll $s5, $s5, 2
-	sll $t0, $s3, 2
+	sll $s5, $s5, 1
+	sll $t0, $s3, 1
 	add $s5, $s5, $t0
 	addi $s5, $s5, STARTING_ADDRESS
 
-	ori $s1, $s1, LOWER_TO_UPPER_VALUE			# Will make sure the case is uppercase
+	andi $s1, $s1, '_'			# Will make sure the case is uppercase
 	beq $s1, 'R', reveal
 	beq $s1, 'F', flag
-	beq $s1, 'w' move_up
+	beq $s1, 'W' move_up
 	beq $s1, 'A', move_left
 	beq $s1, 'S', move_down
 	beq $s1, 'D', move_right
@@ -537,23 +539,29 @@ perform_action:
 
 	remove_flag:
 		xori $t0, $t0, CONT_FLAG
-		jal reset_current_cell
 		sb $t0, 0($s4)
+		move $a1, $s2
+		move $a2, $s3
+		jal reset_current_cell
 		b perform_action_valid_input
 
 	move_up:
 		addi $s6, $s2, -1
 		bltz $s6, erronous_input
+		move $a1, $s2
+		move $a2, $s3
 		jal reset_current_cell
 		sb $s6, Cursor_Row
 		li $t0, ROW_SIZE
-		sll $t0, $t0, 2
+		sll $t0, $t0, 1
 		sub $s5, $s5, $t0
 		b draw_cursor
 		
 	move_left:
 		addi $s7, $s3, -1
 		bltz $s7, erronous_input
+		move $a1, $s2
+		move $a2, $s3
 		jal reset_current_cell
 		sb $s7, Cursor_Row
 		li $t0, 2
@@ -563,10 +571,12 @@ perform_action:
 	move_down:
 		addi $s6, $s2, 1
 		bge $s6, ROW_SIZE, erronous_input
+		move $a1, $s2
+		move $a2, $s3
 		jal reset_current_cell
 		sb $s6, Cursor_Row
 		li $t0, ROW_SIZE
-		sll $t0, $t0, 2
+		sll $t0, $t0, 1
 		add $s5, $s5, $t0
 		b draw_cursor
 
@@ -575,7 +585,7 @@ perform_action:
 		bge $s7, COLUMN_SIZE, erronous_input
 		jal reset_current_cell
 		sb $s7, Cursor_Row
-		addi $s5, $s5, 2
+		addi $s5, $s5, 1
 		b draw_cursor
 
 	draw_cursor:
@@ -681,8 +691,8 @@ reset_current_cell:
 
 	li $t5, ROW_SIZE
 	mul $t2, $t0, $t5
-	sll $t2, $t2, 2
-	sll $t3, $t1, 2
+	sll $t2, $t2, 1
+	sll $t3, $t1, 1
 	add $t2, $t2, $t3
 	addi $t2, $t2, STARTING_ADDRESS
 
