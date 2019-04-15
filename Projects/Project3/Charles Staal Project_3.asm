@@ -451,26 +451,26 @@ perform_action:
 	# t0 = Scrap
 	# v0 = 0 for valid move, -1 for invalid
 
-	pack_stack()						#
-	li $v0, 0						#
-	move $s1, $a1						#
-	move $s0, $a0						#
-	lb $s2, Cursor_Row					#
-	lb $s3, Cursor_Col					#
-	move $s6, $s2						#
-	move $s7, $s3						#
-	li $t0, ROW_SIZE					#
-	mul $s4, $s2, $t0					#
-	add $s4, $s4, $s3					#
-	add $s4, $s0, $s4					#
+	pack_stack()						# Preserve the stack
+	li $v0, 0						# Load 0 in to return register
+	move $s1, $a1						# Move the char in to s1
+	move $s0, $a0						# Move cells_array address to s0
+	lb $s2, Cursor_Row					# Load up Cursor_Row to s2
+	lb $s3, Cursor_Col					# Load up Cursor_Col to s3
+	move $s6, $s2						# Copy Cursor_Row to s6
+	move $s7, $s3						# Copy Cursor_Col to s7
+	li $t0, ROW_SIZE					# Load ROW_SIZE to t0 for multiplication
+	mul $s4, $s2, $t0					# Multiply Cursor_Row bt ROW SIZE
+	add $s4, $s4, $s3					# Add Cursor_Col and Cursor_Row * ROW_SIZE
+	add $s4, $s0, $s4					# Add the cells_array address and now we have the cells cells_array address
 
-	mul $s5, $s2, $t0					#
-	sll $s5, $s5, 1						#
-	sll $t0, $s3, 1						#
-	add $s5, $s5, $t0					#
-	addi $s5, $s5, STARTING_ADDRESS				#
+	mul $s5, $s2, $t0					# Multiply Cursor_Row by ROW_SIZE
+	sll $s5, $s5, 1						# Multiply it by 2
+	sll $t0, $s3, 1						# Multiply Cursor_Col by 2
+	add $s5, $s5, $t0					# Add them together
+	addi $s5, $s5, STARTING_ADDRESS				# Add the Display STARTING_ADDRESS and now we have the display address
 
-	lb $t0, 0($s4)						#
+	lb $t0, 0($s4)						# Load the byte from cells_array
 
 	andi $s1, $s1, '_'					# Will make sure the case is uppercase
 	beq $s1, 'R', reveal					#
@@ -482,23 +482,26 @@ perform_action:
 	b erronous_input					#
 
 	reveal:							#
-		ori $t0, $t0, CELL_REVEALED			# Need to rewrite this
-		sb $t0, 0($s4)					#
-		andi $t1, $t0, CELL_REVEALED			#
-		beq $t1, CELL_REVEALED, perform_action_end	#
-		andi $t1, $t0, CONT_FLAG			#
-		bne $t1, CONT_FLAG, skip_remove_flag		#
-		xori $t0, $t0, CONT_FLAG			#
+		andi $t1, $t0, CONT_FLAG			# First we need to make sure it doesn't contain a flag
+		bne $t1, CONT_FLAG, skip_remove_flag		# If it doesn't, skip removing it
+		xori $t0, $t0, CONT_FLAG			# If it does, xor the bit to toggle it
 		skip_remove_flag:				#
-		sb $t0, 0($s4)					#
-		b draw_action					#
+		ori $t0, $t0, CELL_REVEALED			# Toggle CELL_REVEALED bit to 1
+		sb $t0, 0($s4)					# Store the bit to cells_array
+		move $a1, $s2					#
+		move $a2, $s3					#
+		jal draw_current_cell				#
+		b perform_action_end				#
 
 	flag:							#
 		andi $t1, $t0, CELL_REVEALED			#
 		beq $t1, CELL_REVEALED, perform_action_end	#
 		xori $t0, $t0, CONT_FLAG			#
 		sb $t0, 0($s4)					#
-		b draw_action					#
+		move $a1, $s2					#
+		move $a2, $s3					#
+		jal draw_current_cell				#
+		b draw_cursor					#
 
 	move_up:						#
 		addi $s6, $s2, -1				#
@@ -540,12 +543,6 @@ perform_action:
 		move $a2, $s3					#
 		jal draw_current_cell				#
 		b draw_cursor					#
-
-	draw_action:						#
-		move $a1, $s2					#
-		move $a2, $s3					#
-		jal draw_current_cell				#
-		b perform_action_end				#
 
 	draw_cursor:
 		lb $t2, 1($s5)					#
@@ -703,7 +700,7 @@ draw_current_cell:
 		sb $t6, 1($t2)
 
 	jr $ra
-
+	
 set_bomb:
 	# t0/a0 = Row coord
 	# t1/a1 = Column coord
