@@ -74,6 +74,7 @@
 .eqv CHAR_TO_INT_VALUE -48					#
 .eqv INT_TO_CHAR_VALUE 48					#
 .eqv LOWER_TO_UPPER_VALUE 32					#
+
 # Syscalls
 .eqv OPEN_FILE 13						#
 .eqv READ_FROM_FILE 14						#
