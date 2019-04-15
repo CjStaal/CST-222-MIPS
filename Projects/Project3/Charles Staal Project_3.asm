@@ -64,7 +64,7 @@
 .eqv CONT_BOMB 32						#
 .eqv CELL_REVEALED 64						#
 .eqv FLAGGED_BOMB 48						#
-.eqv REVEALED_BOMB 96						#
+.eqv EXPLODED_BOMB 96						#
 
 # Quantities
 .eqv MAX_CELLS 100						#
@@ -470,6 +470,8 @@ perform_action:
 	add $s5, $s5, $t0					#
 	addi $s5, $s5, STARTING_ADDRESS				#
 
+	lb $t0, 0($s4)						#
+
 	andi $s1, $s1, '_'					# Will make sure the case is uppercase
 	beq $s1, 'R', reveal					#
 	beq $s1, 'F', flag					#
@@ -480,120 +482,78 @@ perform_action:
 	b erronous_input					#
 
 	reveal:							#
-		lb $t0, 0($s4)					#
 		ori $t0, $t0, CELL_REVEALED			# Need to rewrite this
 		sb $t0, 0($s4)					#
-		andi $t1, $t0, CONT_BOMB			#
-		beq $t1, CONT_BOMB, reveal_action_bomb		#
+		andi $t1, $t0, CELL_REVEALED			#
+		beq $t1, CELL_REVEALED, perform_action_end	#
 		andi $t1, $t0, CONT_FLAG			#
-		bne $t1, CONT_FLAG, skip_reveal_flag		#
+		bne $t1, CONT_FLAG, skip_remove_flag		#
 		xori $t0, $t0, CONT_FLAG			#
-		skip_reveal_flag:				#
-		andi $t0, $t0, 15				#
-		beqz $t0, draw_default_cell			#
-		blt $t0, 9, draw_number_cell			#
-		bge $t0, 9, erronous_input			#
-
-	reveal_action_bomb:					#
-		li $t1, BRIGHT_RED_BACKGROUND			#
-		addi $t1, $t1, WHITE_FOREGROUND			#
-		li $t2, EXPLOSION_ICON				#
-		sb $t1, 0($s5)					#
-		sb $t2, 1($s5)					#
-		b perform_action_valid_input			#
-
-	draw_default_cell:					#
-		li $t1, DEFAULT_CELL_ICON			#
-		li $t2, DEFAULT_CELL_COLOR			#
-		sb $t1, 0($s5)					#
-		sb $t2, 1($s5)					#
-		b perform_action_valid_input			#
-
-	draw_number_cell:					#
-		addi $t1, $t1, INT_TO_CHAR_VALUE		#
-		li $t2, BRIGHT_MAGENTA_FOREGROUND		#
-		sb $t1, 0($s5)					#
-		sb $t2, 1($s5)					#
-		b perform_action_valid_input			#
-
-	skip_explosion:						#
-		andi $t1, $t0, CONT_FLAG			#
-		beq $t1, CONT_FLAG, erronous_input		#
-		andi $t1, $t0, 15				#
-		beqz $t1, draw_default_cell			#
-		ble, $t1, 8, draw_number_cell			#
-		bgt $t1, 8, erronous_input			#
+		skip_remove_flag:				#
+		sb $t0, 0($s4)					#
+		b draw_action					#
 
 	flag:							#
-		lb $t0, 0($s4)					#
-		andi $t1, $t0, CONT_FLAG			#
-		beq, $t1, CONT_FLAG, remove_flag		#
-		ori $t0, $t0, CONT_FLAG				#
-		sb $t0, 0($s4)					#
-		li $t1, GRAY_BACKGROUND				#
-		addi $t1, $t1, BRIGHT_BLUE_FOREGROUND		#
-		li $t2, FLAG_ICON				#
-		sb $t1, 0($s5)					#
-		sb $t2, 1($s5)					#
-		b perform_action_valid_input			#
-
-	remove_flag:						#
+		andi $t1, $t0, CELL_REVEALED			#
+		beq $t1, CELL_REVEALED, perform_action_end	#
 		xori $t0, $t0, CONT_FLAG			#
 		sb $t0, 0($s4)					#
-		move $a1, $s2					#
-		move $a2, $s3					#
-		jal reset_current_cell				#
-		b perform_action_valid_input			#
+		b draw_action					#
 
 	move_up:						#
 		addi $s6, $s2, -1				#
 		bltz $s6, erronous_input			#
-		move $a1, $s2					#
-		move $a2, $s3					#
-		jal reset_current_cell				#
 		li $t0, ROW_SIZE				#
 		sll $t0, $t0, 1					#
 		sub $s5, $s5, $t0				#
+		move $a1, $s2					#
+		move $a2, $s3					#
+		jal draw_current_cell				#
 		b draw_cursor					#
 
 	move_left:						#
 		addi $s7, $s3, -1				#
 		bltz $s7, erronous_input			#
-		move $a1, $s2					#
-		move $a2, $s3					#
-		jal reset_current_cell				#
 		li $t0, 2					#
 		sub $s5, $s5, $t0				#
+		move $a1, $s2					#
+		move $a2, $s3					#
+		jal draw_current_cell				#
 		b draw_cursor					#
 
 	move_down:						#
 		addi $s6, $s2, 1				#
 		bge $s6, ROW_SIZE, erronous_input		#
-		move $a1, $s2					#
-		move $a2, $s3					#
-		jal reset_current_cell				#
 		li $t0, ROW_SIZE				#
 		sll $t0, $t0, 1					#
 		add $s5, $s5, $t0				#
+		move $a1, $s2					#
+		move $a2, $s3					#
+		jal draw_current_cell				#
 		b draw_cursor					#
 
 	move_right:						#
 		addi $s7, $s3, 1				#
 		bge $s7, COLUMN_SIZE, erronous_input		#
-		jal reset_current_cell				#
 		addi $s5, $s5, 2				#
+		move $a1, $s2					#
+		move $a2, $s3					#
+		jal draw_current_cell				#
 		b draw_cursor					#
 
-	draw_cursor:						#
+	draw_action:						#
+		move $a1, $s2					#
+		move $a2, $s3					#
+		jal draw_current_cell				#
+		b perform_action_end				#
+
+	draw_cursor:
 		lb $t2, 1($s5)					#
 		andi $t2, $t2, 15				#
 		addi $t2, $t2, YELLOW_BACKGROUND		#
 		sb $t2, 1($s5)					#
 		sb $s6, Cursor_Row				#
 		sb $s7, Cursor_Col				#
-		b perform_action_valid_input			#
-
-	perform_action_valid_input:				#
 		li $v0, 0					#
 		b perform_action_end				#
 
@@ -624,22 +584,19 @@ game_status:
 	game_status_loop:					#
 		beq $t0, MAX_CELLS, check_win_condition		# If we are done going through the map, check the win condition
 		lb $t1, 0($s0)					# Load byte from cells_array to t1
+		beq $t1, EXPLODED_BOMB, game_lost_exploded_bomb	#
 		andi $t5, $t1, CELL_REVEALED			# AND the byte with CELL_REVEALED to check the 5th bit
-		beq $t5, CELL_REVEALED, check_revealed_cell	# If it's equal to itself, we know it's a revealed cell, now we must check if it's a bomb
+		beq $t5, CELL_REVEALED, log_revealed_cell	# If it's equal to itself, we know it's a revealed cell, now we must check if it's a bomb
 		andi $t5, $t1, CONT_FLAG			# AND the byte with CONT_FLAG to see if it's flagged
 		beq $t5, CONT_FLAG, check_flagged_cell		# If it's equal to itself, we know it contains a flag, we must check if that flag is correct
-		andi $t5, $t1, CONT_BOMB			# AND the byte with CONT_BOMB to see if it's a bomb
-		beq $t5, CONT_BOMB, game_ongoing		# If it is a bomb, we know it is not revealed, and not flagged, so the game is still on
 		return_to_game_status_loop:			#
 		addi $s0, $s0, 1				# Increment the cells_array address by 1
 		addi $t0, $t0, 1				# Increment the counter by 1
 		b game_status_loop				#
 
-	check_revealed_cell:					#
-		andi $t5, $t1, CONT_BOMB			# Check to see if we revealed a bomb
-		beq $t5, CONT_BOMB, game_lost_revealed_bomb	# If we did reveal a bomb, we lost the game
-		addi $t2, $t2, 1				# Increment the revealed counter by 1
-		b return_to_game_status_loop			# Return to the status loop
+	log_revealed_cell:
+		addi $t2, $t2, 1
+		b return_to_game_status_loop
 
 	check_flagged_cell:					#
 		andi $t5, $t1, CONT_BOMB			# Check to see if the flagged cell is correctly flagged
@@ -659,7 +616,7 @@ game_status:
 		li $v0, 0					# If the game is ongoing, return 0
 		b game_status_end				# Go to the end of game status
 
-	game_lost_revealed_bomb:				#
+	game_lost_exploded_bomb:				#
 		li $v0, -1					# If we revealed a bomb, we lost the game
 
 	game_status_end:					#
@@ -676,17 +633,17 @@ search_cells:
 #################################################################
 # PART 6 STUDENT DEFINED FUNCTIONS
 #################################################################
-reset_current_cell:
+draw_current_cell:
 	# a0 = cells_array address
-	# t0 = Cursor row
-	# t1 = Cursor Column
+	# t0/a1 = Cursor row
+	# t1/a2 = Cursor Column
 	# t2 = Display address + offset
 	# t3 = cells_array address + offset
 	# t4 = Byte from cells_array
 	# t5 = Scrap
 
-	lb $t0, Cursor_Row
-	lb $t1, Cursor_Col
+	move $t0, $a1
+	move $t1, $a2
 
 	li $t5, ROW_SIZE
 	mul $t2, $t0, $t5
@@ -700,10 +657,10 @@ reset_current_cell:
 	add $t3, $t3, $a0
 
 	lb $t4, 0($t3)
+	beq $t5, EXPLODED_BOMB, draw_explosion
 
 	andi $t5, $t4, CONT_FLAG
 	beq $t5, CONT_FLAG, draw_flag
-
 	andi $t5, $t4, CELL_REVEALED
 	bne $t5, CELL_REVEALED, set_cell_to_hidden
 
@@ -715,29 +672,38 @@ reset_current_cell:
 	set_cell_black:
 		li $t5, NULL_ICON
 		li $t6, BLACK_BACKGROUND
-		b draw_current_cell
+		b draw_the_cell
+
+	draw_explosion:
+		li $t5, EXPLOSION_ICON
+		li $t6, BRIGHT_RED_BACKGROUND
+		addi $t6, $t6, WHITE_FOREGROUND
+		b draw_the_cell
 
 	set_cell_num:
 		addi $t5, $t5, INT_TO_CHAR_VALUE
 		li $t6, BRIGHT_MAGENTA_FOREGROUND
 		addi $t6, $t6, BLACK_BACKGROUND
-		b draw_current_cell
+		b draw_the_cell
 	
 	draw_flag:
 		li $t5, FLAG_ICON
 		li $t6, BRIGHT_MAGENTA_FOREGROUND
 		addi $t6, $t6, GRAY_BACKGROUND
-		b draw_current_cell
+		b draw_the_cell
+
 	set_cell_to_hidden:
 		li $t5, NULL_ICON
 		li $t6, GRAY_FOREGROUND
 		addi $t6, $t6, GRAY_BACKGROUND
-		b draw_current_cell
-	draw_current_cell:
+		b draw_the_cell
+
+	draw_the_cell:
 		sb $t5, 0($t2)
 		sb $t6, 1($t2)
-	reset_current_cell_end:
+
 	jr $ra
+
 set_bomb:
 	# t0/a0 = Row coord
 	# t1/a1 = Column coord
