@@ -452,13 +452,16 @@ perform_action:
 	# v0 = 0 for valid move, -1 for invalid
 
 	pack_stack()						# Preserve the stack
-	li $v0, 0						# Load 0 in to return register
+
 	move $s1, $a1						# Move the char in to s1
 	move $s0, $a0						# Move cells_array address to s0
+
 	lb $s2, Cursor_Row					# Load up Cursor_Row to s2
 	lb $s3, Cursor_Col					# Load up Cursor_Col to s3
+
 	move $s6, $s2						# Copy Cursor_Row to s6
 	move $s7, $s3						# Copy Cursor_Col to s7
+
 	li $t0, ROW_SIZE					# Load ROW_SIZE to t0 for multiplication
 	mul $s4, $s2, $t0					# Multiply Cursor_Row bt ROW SIZE
 	add $s4, $s4, $s3					# Add Cursor_Col and Cursor_Row * ROW_SIZE
@@ -473,94 +476,94 @@ perform_action:
 	lb $t0, 0($s4)						# Load the byte from cells_array
 
 	andi $s1, $s1, '_'					# Will make sure the case is uppercase
-	beq $s1, 'R', reveal					#
-	beq $s1, 'F', flag					#
-	beq $s1, 'W' move_up					#
-	beq $s1, 'A', move_left					#
-	beq $s1, 'S', move_down					#
-	beq $s1, 'D', move_right				#
-	b erronous_input					#
+	beq $s1, 'R', reveal					# If R, then reveal
+	beq $s1, 'F', flag					# If F, then flag
+	beq $s1, 'W' move_up					# If W, move up
+	beq $s1, 'A', move_left					# If A, move left
+	beq $s1, 'S', move_down					# If S, move down
+	beq $s1, 'D', move_right				# If D, move right
+	b erronous_input					# Else it's erronous input
 
 	reveal:							#
 		andi $t1, $t0, CONT_FLAG			# First we need to make sure it doesn't contain a flag
 		bne $t1, CONT_FLAG, skip_remove_flag		# If it doesn't, skip removing it
 		xori $t0, $t0, CONT_FLAG			# If it does, xor the bit to toggle it
-		skip_remove_flag:				#
+		skip_remove_flag:				# Go here if there is not a flag
 		ori $t0, $t0, CELL_REVEALED			# Toggle CELL_REVEALED bit to 1
 		sb $t0, 0($s4)					# Store the bit to cells_array
-		move $a1, $s2					#
-		move $a2, $s3					#
-		jal draw_current_cell				#
-		b perform_action_end				#
+		move $a1, $s2					# Move Cursor_Row to arg1
+		move $a2, $s3					# Move Cursor_Col to arg2
+		jal draw_current_cell				# Draw the current cell
+		li $v0, 0					# Since we don't go to draw_cursor, we need to set it here
+		b perform_action_end				# End action
 
 	flag:							#
-		andi $t1, $t0, CELL_REVEALED			#
-		beq $t1, CELL_REVEALED, perform_action_end	#
-		xori $t0, $t0, CONT_FLAG			#
-		sb $t0, 0($s4)					#
-		move $a1, $s2					#
-		move $a2, $s3					#
-		jal draw_current_cell				#
-		b draw_cursor					#
+		andi $t1, $t0, CELL_REVEALED			# Make sure the cell is not revealed
+		beq $t1, CELL_REVEALED, perform_action_end	# If it is, do nothing and end the function
+		xori $t0, $t0, CONT_FLAG			# Toggle the flag
+		sb $t0, 0($s4)					# Store the byte in to cells_array
+		move $a1, $s2					# Move Cursor_Row to arg1
+		move $a2, $s3					# Move Cursor_Col to arg2
+		jal draw_current_cell				# Draw the current cell
+		b draw_cursor					# Draw the cursor on the cell
 
 	move_up:						#
-		addi $s6, $s2, -1				#
-		bltz $s6, erronous_input			#
-		li $t0, ROW_SIZE				#
-		sll $t0, $t0, 1					#
-		sub $s5, $s5, $t0				#
-		move $a1, $s2					#
-		move $a2, $s3					#
-		jal draw_current_cell				#
-		b draw_cursor					#
+		addi $s6, $s2, -1				# Subtract 1 from the new Cursor_Row
+		bltz $s6, erronous_input			# If its < 0, we know it's erronous input
+		li $t0, ROW_SIZE				# Load up ROW_SIZE to t0 for negation
+		sll $t0, $t0, 1					# Multiply ROW_SIZE by 2
+		sub $s5, $s5, $t0				# Subtract ROW_SIZE from Display address
+		move $a1, $s2					# Move Cursor_Row to arg1
+		move $a2, $s3					# Move Cursor_Col to arg2
+		jal draw_current_cell				# Draw the current cell
+		b draw_cursor					# Draw the cursor on the new cell
 
 	move_left:						#
-		addi $s7, $s3, -1				#
-		bltz $s7, erronous_input			#
-		li $t0, 2					#
-		sub $s5, $s5, $t0				#
-		move $a1, $s2					#
-		move $a2, $s3					#
-		jal draw_current_cell				#
-		b draw_cursor					#
+		addi $s7, $s3, -1				# Subtract 1 from the new Cursor_Col
+		bltz $s7, erronous_input			# If its < 0, we know it's erronous input
+		li $t0, 2					# Load 2 in to t0 for subtraction
+		sub $s5, $s5, $t0				# Minus 2 from Display address
+		move $a1, $s2					# Move Cursor_Row to arg1
+		move $a2, $s3					# Move Cursor_Col to arg2
+		jal draw_current_cell				# Draw the current cell
+		b draw_cursor					# Draw the cursor on the new cell
 
 	move_down:						#
-		addi $s6, $s2, 1				#
-		bge $s6, ROW_SIZE, erronous_input		#
-		li $t0, ROW_SIZE				#
-		sll $t0, $t0, 1					#
-		add $s5, $s5, $t0				#
-		move $a1, $s2					#
-		move $a2, $s3					#
-		jal draw_current_cell				#
-		b draw_cursor					#
+		addi $s6, $s2, 1				# Add 1 to the new Cursor_Row
+		bge $s6, ROW_SIZE, erronous_input		# If it's larger or equal to ROW_SIZE, we know it's erronous
+		li $t0, ROW_SIZE				# Load up ROW_SIZE to t0 for additon 
+		sll $t0, $t0, 1					# Multiply ROW_SIZE by 2
+		add $s5, $s5, $t0				# Add it to display address
+		move $a1, $s2					# Move Cursor_Row to arg1
+		move $a2, $s3					# Move Cursor_Col to arg2
+		jal draw_current_cell				# Draw the current cell
+		b draw_cursor					# Draw the cursor on the new cell
 
 	move_right:						#
-		addi $s7, $s3, 1				#
-		bge $s7, COLUMN_SIZE, erronous_input		#
-		addi $s5, $s5, 2				#
-		move $a1, $s2					#
-		move $a2, $s3					#
-		jal draw_current_cell				#
-		b draw_cursor					#
+		addi $s7, $s3, 1				# Add 1 to the new Cursor_Row
+		bge $s7, COLUMN_SIZE, erronous_input		# If it's larger or equal to COLUMN_SIZE, we know it's erronous
+		addi $s5, $s5, 2				# Add 2 to display address
+		move $a1, $s2					# Move Cursor_Row to arg1
+		move $a2, $s3					# Move Cursor_Col to arg2
+		jal draw_current_cell				# Draw the current cell
+		b draw_cursor					# Draw the cursor on the new cell
 
 	draw_cursor:
-		lb $t2, 1($s5)					#
-		andi $t2, $t2, 15				#
-		addi $t2, $t2, YELLOW_BACKGROUND		#
-		sb $t2, 1($s5)					#
-		sb $s6, Cursor_Row				#
-		sb $s7, Cursor_Col				#
-		li $v0, 0					#
-		b perform_action_end				#
+		lb $t2, 1($s5)					# Load the color byte from display address
+		andi $t2, $t2, 15				# AND it with 15 to save the right most 4 bits and zero our the 4 MSBs
+		addi $t2, $t2, YELLOW_BACKGROUND		# Add the new background color
+		sb $t2, 1($s5)					# Store the new color combo
+		sb $s6, Cursor_Row				# Store the new Cursor_Row
+		sb $s7, Cursor_Col				# Store the new Cursor_Col
+		li $v0, 0					# Load up v0 for return
+		b perform_action_end				# Go to the end of the function
 
 	erronous_input:						#
-		li $v0, -1					#
-		b perform_action_end				#
+		li $v0, -1					# Load -1 for return
 
 	perform_action_end:					#
-	unpack_stack()						#
-	jr $ra							#
+	unpack_stack()						# Restore the stack
+	jr $ra							# Return to previous address
 
 
 game_status:
@@ -581,7 +584,7 @@ game_status:
 	game_status_loop:					#
 		beq $t0, MAX_CELLS, check_win_condition		# If we are done going through the map, check the win condition
 		lb $t1, 0($s0)					# Load byte from cells_array to t1
-		beq $t1, EXPLODED_BOMB, game_lost_exploded_bomb	#
+		beq $t1, EXPLODED_BOMB, game_lost_exploded_bomb	# If it's equal to the exploded bomb, we lost
 		andi $t5, $t1, CELL_REVEALED			# AND the byte with CELL_REVEALED to check the 5th bit
 		beq $t5, CELL_REVEALED, log_revealed_cell	# If it's equal to itself, we know it's a revealed cell, now we must check if it's a bomb
 		andi $t5, $t1, CONT_FLAG			# AND the byte with CONT_FLAG to see if it's flagged
@@ -591,9 +594,9 @@ game_status:
 		addi $t0, $t0, 1				# Increment the counter by 1
 		b game_status_loop				#
 
-	log_revealed_cell:
-		addi $t2, $t2, 1
-		b return_to_game_status_loop
+	log_revealed_cell:					#
+		addi $t2, $t2, 1				# Add 1 to number of boxes revealed
+		b return_to_game_status_loop			# Return to game loop by the end of it
 
 	check_flagged_cell:					#
 		andi $t5, $t1, CONT_BOMB			# Check to see if the flagged cell is correctly flagged
@@ -639,67 +642,67 @@ draw_current_cell:
 	# t4 = Byte from cells_array
 	# t5 = Scrap
 
-	move $t0, $a1
-	move $t1, $a2
+	move $t0, $a1						# Load Cursor_Row to t0
+	move $t1, $a2						# Load Cursor_Col to t1
 
-	li $t5, ROW_SIZE
-	mul $t2, $t0, $t5
-	sll $t2, $t2, 1
-	sll $t3, $t1, 1
-	add $t2, $t2, $t3
-	addi $t2, $t2, STARTING_ADDRESS
+	li $t5, ROW_SIZE					# Load ROW_SIZE to t5
+	mul $t2, $t0, $t5					# Multiply Cursor_Row by ROW_SIZE
+	sll $t2, $t2, 1						# Multiply new Cursor_Row by 2
+	sll $t3, $t1, 1						# Multiply Cursor_Col by 2
+	add $t2, $t2, $t3					# Add the two together
+	addi $t2, $t2, STARTING_ADDRESS				# Add the display starting address
 
-	mul $t3, $t0, $t5
-	add $t3, $t3, $t1
-	add $t3, $t3, $a0
+	mul $t3, $t0, $t5					# Multiply Cursor_Row by ROW_SIZE
+	add $t3, $t3, $t1					# Add Cursor_Row and Cursor_Col
+	add $t3, $t3, $a0					# Add cells_array starting address
 
-	lb $t4, 0($t3)
-	beq $t5, EXPLODED_BOMB, draw_explosion
+	lb $t4, 0($t3)						# Load byte from cells_array
+	beq $t5, EXPLODED_BOMB, draw_explosion			# If it's an exploded bomb, draw explosion
 
-	andi $t5, $t4, CONT_FLAG
-	beq $t5, CONT_FLAG, draw_flag
-	andi $t5, $t4, CELL_REVEALED
-	bne $t5, CELL_REVEALED, set_cell_to_hidden
+	andi $t5, $t4, CONT_FLAG				# AND the byte with CONT_FLAG
+	beq $t5, CONT_FLAG, draw_flag				# If it equals CONT_FLAG, draw a flag
+	andi $t5, $t4, CELL_REVEALED				# AND the byte with CELL_REVEALED
+	bne $t5, CELL_REVEALED, set_cell_to_hidden		# If it does not equal CELL_REVEALED, set cell to hidden
 
-	andi $t5, $t4, 15
-	beqz $t5, set_cell_black
-	blt $t5, 9, set_cell_num
-	bge $t5, 9, set_cell_black
+	andi $t5, $t4, 15					# AND the byte with 15 to clear out the 4 MSB's
+	beqz $t5, set_cell_black				# If it's equal to 0, we know it's null, draw null cell
+	blt $t5, 9, set_cell_num				# If it's 1-8, draw a numbered cell
+	bge $t5, 9, set_cell_black				# If its > 8, draw a null cell, but honestly wtf we don't know whats in here
 
-	set_cell_black:
-		li $t5, NULL_ICON
-		li $t6, BLACK_BACKGROUND
-		b draw_the_cell
+	set_cell_black:						#
+		li $t5, NULL_ICON				# Load null icon
+		li $t6, BLACK_BACKGROUND			# Load black background
+		b draw_the_cell					# Draw the cell
 
-	draw_explosion:
-		li $t5, EXPLOSION_ICON
-		li $t6, BRIGHT_RED_BACKGROUND
-		addi $t6, $t6, WHITE_FOREGROUND
-		b draw_the_cell
+	draw_explosion:						#
+		li $t5, EXPLOSION_ICON				# Load explosion icon
+		li $t6, WHITE_FOREGROUND			# Load white foreground
+		add $t6, $t6, BRIGHT_RED_BACKGROUND		# Add bright red background
+		b draw_the_cell					# Draw the cell
 
-	set_cell_num:
-		addi $t5, $t5, INT_TO_CHAR_VALUE
-		li $t6, BRIGHT_MAGENTA_FOREGROUND
-		addi $t6, $t6, BLACK_BACKGROUND
-		b draw_the_cell
+	set_cell_num:						#
+		addi $t5, $t5, INT_TO_CHAR_VALUE		# Add the INT_TO_CHAR value to load the number icon value
+		li $t6, BRIGHT_MAGENTA_FOREGROUND		# Load bright magenta foreground
+		addi $t6, $t6, BLACK_BACKGROUND			# Add black background
+		b draw_the_cell					# Draw the cell
 	
-	draw_flag:
-		li $t5, FLAG_ICON
-		li $t6, BRIGHT_MAGENTA_FOREGROUND
-		addi $t6, $t6, GRAY_BACKGROUND
-		b draw_the_cell
+	draw_flag:						#
+		li $t5, FLAG_ICON				# Load the flag icon
+		li $t6, BRIGHT_MAGENTA_FOREGROUND		# Load bright magenta foreground
+		addi $t6, $t6, GRAY_BACKGROUND			# Add gray background
+		b draw_the_cell					# Draw the cell
 
-	set_cell_to_hidden:
-		li $t5, NULL_ICON
-		li $t6, GRAY_FOREGROUND
-		addi $t6, $t6, GRAY_BACKGROUND
-		b draw_the_cell
+	set_cell_to_hidden:					#
+		li $t5, NULL_ICON				# Load null icon
+		li $t6, GRAY_FOREGROUND				# Load gray foreground
+		addi $t6, $t6, GRAY_BACKGROUND			# Add gray background
+		b draw_the_cell					# Draw the cell
 
-	draw_the_cell:
-		sb $t5, 0($t2)
-		sb $t6, 1($t2)
+	draw_the_cell:						#
+		sb $t5, 0($t2)					# Store icon in first byte
+		sb $t6, 1($t2)					# Store color info in second byte
 
-	jr $ra
+	jr $ra							# Return to previous address
 	
 set_bomb:
 	# t0/a0 = Row coord
@@ -741,6 +744,7 @@ set_adj_bomb:
 	addi $t1, $a1, -1					# Start to left of bomb
 	li $t3, 0						# Set row counter to 0
 	li $t4, 0						# Set column counter to 0
+
 	row_loop:						#
 		beq $t3, 3, set_adj_bomb_finished		# If the row counter = 3, then we are finished
 		column_loop:					#
