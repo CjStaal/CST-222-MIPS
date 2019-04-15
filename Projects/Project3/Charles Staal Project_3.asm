@@ -227,9 +227,9 @@ load_map:
 	# v0 = Returns -1 if error, else returns 0
 
 	pack_stack()						# Preserve the stack since there is a nested function
-	move $t0, $a1						#
-	zero_cells_array($t0)					# Make sure the cells_array is all zero'd
-	move $s0, $a1						# s0 Will be the base address of the cells_array
+	move $s0, $a1						# Move cells_array address to t0
+	zero_cells_array($t0)					# Make sure the cells_array is all zero'd 
+	move $s0, $a1						# s0 will be the base address of the cells_array (redoing since the macro incremented it)
 	li $s1, 0						# s1 will be the cell location/offset of the cells_array
 	li $v0, READ_FROM_FILE					# Set the syscall to read from file
 	la $a1, File_Buffer					# a1 is the address of the input buffer
@@ -237,7 +237,7 @@ load_map:
 	syscall							# Calls the function to read the file in to the buffer
 
 	beq $v0, -1, invalid_case				# If syscall returns a -1, we know there was an error
-	move $s3, $a1
+	move $s3, $a1						# Move the File_Buffer address to s3
 	li $s5, 0						# Initiates row/column toggle to start with row
 	lb $s4, 0($s3)						# Load the byte before we begin to make sure it's not an empty file
 	beqz $s4, invalid_case					# If it's EOF, return error
@@ -265,7 +265,7 @@ load_map:
 			move $a1, $s4				# Move the char to the column register
 			addi $a1, $a1, CHAR_TO_INT_VALUE	# Minus the offset to bring it to its true value
 			addi $s5, $s5, -1			# Minus 1 from the toggle so it's zero now and we will deal with a row when we are back
-			move $a2, $s0
+			move $a2, $s0				# Move cells_arry base address to arg2
 			jal set_bomb				# Go to the function to set up the bomb
 
 		increment_map_address:				#
@@ -273,7 +273,7 @@ load_map:
 		b load_map_loop					# Return to the start of the loop
 
 	end_of_load:						#
-		beqz $s5, load_map_full_load			#
+		beqz $s5, load_map_full_load			# If s5 = 0 and we are at the end of the file, we know we are finished with no errors
 
 	invalid_case:						#
 		li $v0, -1					# Load -1 in to return value so on return we know it failed
@@ -321,10 +321,13 @@ set_cell:
 
 	bltz $t0, set_cell_error				# If row is < 0, return error
 	bltz $t1, set_cell_error				# If column is < 0, return error
+
 	bge $t0, ROW_SIZE, set_cell_error			# If row coord is > ROW_SIZE - 1, reteurn error
 	bge $t1, COLUMN_SIZE, set_cell_error			# If column coord is > COLUMN_SIZE - 1, return error
+
 	bltz $t3, set_cell_error				# If foreground color is less than 0
 	bgt $t3, 15, set_cell_error				# Or foreground color is greater than 15, return error
+
 	srl $t5, $t4, 4						# Shift background color code right by 4 bits so we can check the color easier
 	bltz $t5, set_cell_error				# If background color is less than 0
 	bgt $t5, 15, set_cell_error				# Or is background color is greater than 15, return error
@@ -370,6 +373,7 @@ reveal_map:
 	reveal_loop:						#
 		beq $s2, MAX_CELLS, game_lost			# If the counter = MAX_CELLS, we are done
 		lb $t0, 0($s1)					# Load the byte from the cells_array in to t0
+
 		andi $t0, $t0, 63				# AND the byte with 63 to clear out the 6th bit
 		beq $t0, CONT_BOMB, reveal_bomb			# If the byte = CONT_BOMB, then reveal a bomb
 		beq $t0, FLAGGED_BOMB, draw_correct_flag	# If the byte contains a flagged bomb, reveal a correct flag
@@ -416,12 +420,14 @@ reveal_map:
 		li $a2, EXPLOSION_ICON				# Load explosion icon to a2
 		li $a3, WHITE_FOREGROUND			# Load white foreground to a3
 		li $t0, BRIGHT_RED_BACKGROUND			# Load bright red background to t0
+
 		addi $sp, $sp, -8				# Go in to the stack by 8
 		sw $t0, 0($sp)					# Store t0 in to the stack
-		sw $ra, 4($sp)					#
+		sw $ra, 4($sp)					# Save return address on stack
 		jal set_cell					# Call set_cell to draw the exploded bomb
-		lw $ra, 0($sp)					#
+		lw $ra, 0($sp)					# Restore return address from stack
 		addi $sp, $sp, 8				# Come back up the stack
+
 		b reveal_map_end				# Go to end of function
 
 	draw:							#
@@ -585,11 +591,15 @@ game_status:
 	game_status_loop:					#
 		beq $t0, MAX_CELLS, check_win_condition		# If we are done going through the map, check the win condition
 		lb $t1, 0($s0)					# Load byte from cells_array to t1
+
 		beq $t1, EXPLODED_BOMB, game_lost_exploded_bomb	# If it's equal to the exploded bomb, we lost
+
 		andi $t5, $t1, CELL_REVEALED			# AND the byte with CELL_REVEALED to check the 5th bit
 		beq $t5, CELL_REVEALED, log_revealed_cell	# If it's equal to itself, we know it's a revealed cell, now we must check if it's a bomb
+
 		andi $t5, $t1, CONT_FLAG			# AND the byte with CONT_FLAG to see if it's flagged
 		beq $t5, CONT_FLAG, check_flagged_cell		# If it's equal to itself, we know it contains a flag, we must check if that flag is correct
+
 		return_to_game_status_loop:			#
 		addi $s0, $s0, 1				# Increment the cells_array address by 1
 		addi $t0, $t0, 1				# Increment the counter by 1
@@ -662,6 +672,7 @@ draw_current_cell:
 
 	andi $t5, $t4, CONT_FLAG				# AND the byte with CONT_FLAG
 	beq $t5, CONT_FLAG, draw_flag				# If it equals CONT_FLAG, draw a flag
+
 	andi $t5, $t4, CELL_REVEALED				# AND the byte with CELL_REVEALED
 	bne $t5, CELL_REVEALED, set_cell_to_hidden		# If it does not equal CELL_REVEALED, set cell to hidden
 
@@ -719,9 +730,11 @@ set_bomb:
 
 	li $t3, CONT_BOMB					# Load info for containing a bomb
 	li $t4, ROW_SIZE					# Load ROW_SIZE in to t4 to multiply
+
 	mul $t0, $t0, $t4					# Multiply row coord by ROW_SIZE
 	add $t2, $t2, $t0					# Add row to cells_array address
 	add $t2, $t2, $t1					# Add column coord to the cells_array address
+
 	sb $t3, 0($t2)						# Store the bomb info to the address
 	jal set_adj_bomb					# Set adjacent cells to show distance to bomb
 
@@ -740,11 +753,11 @@ set_adj_bomb:
 
 	move $t0, $a0						# Move row coord to t0
 	move $t1, $a1						# Move column cord to t1
+	li $t3, 0						# Set row counter to 0
+	li $t4, 0						# Set column counter to 0
 
 	addi $t0, $a0, -1					# Start above bomb
 	addi $t1, $a1, -1					# Start to left of bomb
-	li $t3, 0						# Set row counter to 0
-	li $t4, 0						# Set column counter to 0
 
 	row_loop:						#
 		beq $t3, 3, set_adj_bomb_finished		# If the row counter = 3, then we are finished
@@ -754,6 +767,7 @@ set_adj_bomb:
 			return_to_column_loop:			# This is where the branch returns to
 			addi $t4, $t4, 1			# Increment column counter
 			b column_loop				# Return to start of column counter loop
+
 		return_to_row_loop:				# This is where we return to when column counter = 3
 		addi $t3, $t3, 1				# Increment row counter
 		li $t4, 0					# Reset column counter
@@ -762,15 +776,20 @@ set_adj_bomb:
 	add_cell_info:						#
 		add $t5, $t0, $t3				# Add row coord and row counter
 		add $t6, $t1, $t4				# Add column coord and column counter
+
 		bltz $t5, return_to_row_loop			# If the row coord now is less than 0, we are off the grid
 		bltz $t6, return_to_column_loop			# If the column coord now is less than 0, we are off the grid
+
 		bge $t5, ROW_SIZE, return_to_row_loop		# If the row coord now is more than (ROW_SIZE - 1), we are off the grid
 		bgt $t6, COLUMN_SIZE, return_to_column_loop	# If the column coord now is more than (COLUMN_SIZE - 1), we are off the grid
+
 		move $t2, $a2					# Move the cells_array address in to t2
 		add $t2, $t2, $t6				# Add the cells_array address and column coord
+
 		li $t7, ROW_SIZE				# Load ROW_SIZE to t7 for multiplication
 		mul $t5, $t5, $t7				# Multiply row by ROW_SIZE
 		add $t2, $t2, $t5				# Add to cells_array address
+
 		lb $t7, 0($t2)					# Load the byte from the address of cells_array
 		beq $t7, CONT_BOMB, return_to_column_loop	# If it is equal to a bomb, don't do anything and return to the column loop
 		addi $t7, $t7, ADJ_BOMB				# Else increment it by 1
