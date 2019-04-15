@@ -137,7 +137,23 @@
 	map_done:						#
 .end_macro
 
+.macro push(%reg)
+	addi $sp, $sp, -4
+	sw %reg, 0($sp)
+.end_macro
 
+.macro pop(%reg)
+	lw %reg, 0($sp)
+	addi $sp, $sp, 4
+.end_macro
+
+.macro get_byte(%row, %col, %reg_for_byte, %cells_array)
+	li $t9, ROW_SIZE					# Load ROW_SIZE to t9 for multiplication
+	mul %reg_for_byte, %row, $t9				# Multiply Cursor_Row bt ROW SIZE
+	add %reg_for_byte, %reg_for_byte, %col			# Add Cursor_Col and Cursor_Row * ROW_SIZE
+	add %reg_for_byte, %cells_array, %reg_for_byte		# Add the cells_array address and now we have the cells cells_array address
+	lb %reg_for_byte, 0(%reg_for_byte)			# Load byte in to the return register for the macro
+.end_macro
 #################################################################
 # PART 1 FUNCTIONS
 #################################################################
@@ -150,7 +166,7 @@ smiley:
 
 	li $t1, DEFAULT_CELL_ICON				# t1 will be used for icon
 	li $t2, DEFAULT_CELL_COLOR				# t2 will be used for color
-	set_all_cells($t1, $t2)
+	set_all_cells($t1, $t2)					# Sets all cells to default
 
 	li $t0, STARTING_ADDRESS				# t0 will be starting address
 
@@ -501,6 +517,7 @@ perform_action:
 		move $a1, $s2					# Move Cursor_Row to arg1
 		move $a2, $s3					# Move Cursor_Col to arg2
 		jal draw_current_cell				# Draw the current cell
+		jal search_cells				# Search the adjacent cells to reveal others
 		li $v0, 0					# Since we don't go to draw_cursor, we need to set it here
 		b perform_action_end				# End action
 
@@ -638,9 +655,161 @@ game_status:
 #################################################################
 
 search_cells:
-    jr $ra
+	# a0 = cells_array address
+	# a1 = Row coord
+	# a2 = Column coord
+	# s1 = row
+	# t1 = modified row
+	# s2 = col
+	# t2 = modified col
+	# s3 = byte from cells_array
+	# t3 = modified byte
+	
+	pack_stack()						# Lets save the stack
+	move $fp, $sp						# fp = sp
+	push($a1)						# sp.push(row)
+	push($a2)						# sp.push(col)
+
+	search_cells_loop:					# The loop
+		beq $sp, $fp, search_cells_done			# While(sp != fp)
+		pop($s1)					# int row = s.pop()
+		pop($s2)					# int col = s.pop()
+
+		# if (!cell[row][col].isFlag())
+		get_byte($s1, $s2, $s3, $a0)			# 
+		andi $t4, $t3, CONT_FLAG			#
+		beq $t4, CONT_FLAG, skip_reveal			# if (!cell[row][col].isFlag())
+
+		move $a1, $t1					#
+		move $a2, $t2					#
+		jal draw_current_cell				# cell[row][col].reveal()
+		skip_reveal:
+
+		# if (cell[row][col].getNumber() == 0)
+		andi $t3, $s3, 15
+		bnez $t3, search_cells_loop
+
+			# if (row + 1 < 10 && cell[row + 1][col].isHidden() && !cell[row + 1][col].isFlag())
+			addi $t1, $s1, 1
+			bge $t1, ROW_SIZE, search_cells_loop		# row + 1 < ROW_SIZE
+
+			get_byte($t1, $s2, $s3, $a0)			# cell[row + 1][col]
+			andi $t3, $s3, CELL_REVEALED
+			beq $t3, CELL_REVEALED, search_cells_loop	# && cell[row + 1][col] is hidden
+
+			andi $t3, $s3, CONT_FLAG
+			beq $t3, CONT_FLAG, search_cells_loop		# && cell[row + 1][col] !flag
+
+			push($t1)
+			push($s2)
+
+			# if (row + 1 < 10 && cell[row][col + 1].isHidden() && !cell[row][col + 1].isFlag())
+			addi $t1, $s1, 1
+			bge $t1, ROW_SIZE, search_cells_loop		# row + 1 < ROW_SIZE
+
+			addi $t2, $s2, 1
+			get_byte($s1, $t2, $s3, $a0)			# cell[row][col + 1]
+			andi $t3, $s3, CELL_REVEALED
+			beq $t3, CELL_REVEALED, search_cells_loop	# && cell[row][col + 1] is hidden
+
+			andi $t3, $s3, CONT_FLAG
+			beq $t3, CONT_FLAG, search_cells_loop		# && cell[row][col + 1] !flag
+
+			push($s1)
+			push($t2)
+
+			# if (row - 1 >= 0 && cell[row - 1][col].isHidden() && !cell[row - 1][col].isFlag())
+			addi $t1, $s1, -1
+			bltz $t1, search_cells_loop			# row - 1 >= 0
+
+			get_byte($t1, $s2, $s3, $a0)			# cell [row - 1][col]
+			andi $t3, $s3, CELL_REVEALED
+			beq $t3, CELL_REVEALED, search_cells_loop	# && cell[row - 1][col] is hidden
+
+			andi $t3, $s3, CONT_FLAG
+			beq $t3, CONT_FLAG, search_cells_loop		# && cell[row - 1][col] !flag
+
+			push($t1)
+			push($s2)
+
+			# if (row - 1 >= 0 && cell[row][col - 1].isHidden() && !cell[row][col - 1].isFlag())
+			addi $t1, $s1, -1
+			bltz $t1, search_cells_loop			# row - 1 >= 0
+
+			addi $t2, $s2, -1
+			get_byte($s1, $t2, $s3, $a0)
+			andi $t3, $s3, CELL_REVEALED
+			beq $t3, CELL_REVEALED, search_cells_loop	# && cell[row][col - 1] is hidden
+
+			andi $t3, $s3, CONT_FLAG
+			beq $t3, CONT_FLAG, search_cells_loop		# && cell[row][col - 1] !flag
+
+			push($s1)
+			push($t2)
+
+			# if (row - 1 >= 0 && col - 1 >= 0) && cell[row - 1][col - 1].isHidden() && !cell[row - 1][col - 1].isFlag())
+			addi $t1, $s1, -1
+			addi $t2, $s2, -1
+			bltz $t1, search_cells_loop
+			bltz $t2, search_cells_loop
+			get_byte($t1, $t2, $s3, $a0)
+			andi $t3, $s3, CELL_REVEALED
+			beq $t3, CELL_REVEALED, search_cells_loop	# && cell[row - 1][col - 1] is hidden
 
 
+			andi $t3, $s3, CONT_FLAG
+			beq $t3, CONT_FLAG, search_cells_loop		# && cell[row - 1][col - 1] !flag
+			push($t1)
+			push($t2)
+
+			# if (row - 1 >= 0 && col + 1 < 10 && cell[row - 1][col + 1].isHidden() && !cell[row - 1][col + 1].isFlag())
+			addi $t1, $s1, -1
+			addi $t2, $s2, 1
+			bltz $t1, search_cells_loop
+			bge $t2, COLUMN_SIZE, search_cells_loop
+			get_byte($t1, $t2, $s3, $a0)
+			andi $t3, $s3, CELL_REVEALED
+			beq $t3, CELL_REVEALED, search_cells_loop	# && cell[row - 1][col - 1] is hidden
+
+
+			andi $t3, $s3, CONT_FLAG
+			beq $t3, CONT_FLAG, search_cells_loop		# && cell[row - 1][col - 1] !flag
+			push($t1)
+			push($t2)
+
+			# if (row + 1 < 10 && col - 1 >= 0 && cell[row + 1][col - 1].isHidden() && !cell[row + 1][col - 1].isFlag())
+			addi $t1, $s1, 1
+			addi $t2, $s2, -1
+			bge $t1, ROW_SIZE, search_cells_loop
+			bltz $t2, search_cells_loop
+			get_byte($t1, $t2, $s3, $a0)
+			andi $t3, $s3, CELL_REVEALED
+			beq $t3, CELL_REVEALED, search_cells_loop	# && cell[row - 1][col - 1] is hidden
+
+
+			andi $t3, $s3, CONT_FLAG
+			beq $t3, CONT_FLAG, search_cells_loop		# && cell[row - 1][col - 1] !flag
+			push($t1)
+			push($t2)
+
+			# if (row + 1 < 10 && col + 1 < 10 && cell[row + 1][col + 1].isHidden() && !cell[row + 1][col + 1].isFlag())
+			addi $t1, $s1, 1
+			addi $t2, $s2, 1
+			bge $t1, ROW_SIZE, search_cells_loop
+			bge $t2, COLUMN_SIZE, search_cells_loop
+			get_byte($t1, $t2, $s3, $a0)
+			andi $t3, $s3, CELL_REVEALED
+			beq $t3, CELL_REVEALED, search_cells_loop	# && cell[row - 1][col - 1] is hidden
+
+
+			andi $t3, $s3, CONT_FLAG
+			beq $t3, CONT_FLAG, search_cells_loop		# && cell[row - 1][col - 1] !flag
+			push($t1)
+			push($t2)
+
+	search_cells_done:
+	unpack_stack()
+	jr $ra
 #################################################################
 # PART 6 STUDENT DEFINED FUNCTIONS
 #################################################################
@@ -689,7 +858,7 @@ draw_current_cell:
 	draw_explosion:						#
 		li $t5, EXPLOSION_ICON				# Load explosion icon
 		li $t6, WHITE_FOREGROUND			# Load white foreground
-		add $t6, $t6, BRIGHT_RED_BACKGROUND		# Add bright red background
+		addi $t6, $t6, BRIGHT_RED_BACKGROUND		# Add bright red background
 		b draw_the_cell					# Draw the cell
 
 	set_cell_num:						#
