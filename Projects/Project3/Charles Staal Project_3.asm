@@ -154,6 +154,13 @@
 	add %reg_for_byte, %cells_array, %reg_for_byte		# Add the cells_array address and now we have the cells cells_array address
 	lb %reg_for_byte, 0(%reg_for_byte)			# Load byte in to the return register for the macro
 .end_macro
+.macro store_byte(%row, %col, %byte_to_store, %cells_array)
+	li $t9, ROW_SIZE					# Load ROW_SIZE to t9 for multiplication
+	mul $t9, %row, $t9				# Multiply Cursor_Row by ROW SIZE
+	add $t9, $t9, %col			# Add Cursor_Col and Cursor_Row * ROW_SIZE
+	add $t9, %cells_array, $t9		# Add the cells_array address and now we have the cells cells_array address
+	sb %byte_to_store, 0($t9)			# Load byte in to the return register for the macro
+.end_macro
 #################################################################
 # PART 1 FUNCTIONS
 #################################################################
@@ -667,17 +674,16 @@ search_cells:
 	# t2 = modified col
 	# s3 = byte from cells_array
 	# t3 = modified byte
-	
+	# s7 = ROW_SIZE for mult
 	pack_stack()						# Lets save the stack
 	move $fp, $sp						# fp = sp
 	push($a1)						# sp.push(row)
 	push($a2)						# sp.push(col)
 
 	search_cells_loop:					# The loop
-		beq $sp, $fp, search_cells_done			# While(sp != fp)
-		pop($s2)					# int col = s.pop(), Had to reverse these as the stack is FILO
-		pop($s1)					# int row = s.pop()
-
+		beq $fp, $sp, search_cells_done			# While(sp != fp)
+		pop($s2)
+		pop($s1)
 		# if (!cell[row][col].isFlag())
 		get_byte($s1, $s2, $s3, $a0)			# 
 		andi $t4, $s3, CONT_FLAG			#
@@ -685,6 +691,8 @@ search_cells:
 
 		move $a1, $s1					#
 		move $a2, $s2					#
+		ori $s3, $s3, CELL_REVEALED
+		store_byte($s1, $s2, $s3, $a0)
 		jal draw_current_cell				# cell[row][col].reveal()
 		skip_reveal:
 
@@ -695,7 +703,6 @@ search_cells:
 			# if (row + 1 < 10 && cell[row + 1][col].isHidden() && !cell[row + 1][col].isFlag())
 			addi $t1, $s1, 1
 			bge $t1, ROW_SIZE, if2		# row + 1 < ROW_SIZE
-
 			get_byte($t1, $s2, $s3, $a0)			# cell[row + 1][col]
 			andi $t3, $s3, CELL_REVEALED
 			beq $t3, CELL_REVEALED, if2	# && cell[row + 1][col] is hidden
@@ -726,7 +733,6 @@ search_cells:
 			# if (row - 1 >= 0 && cell[row - 1][col].isHidden() && !cell[row - 1][col].isFlag())
 			addi $t1, $s1, -1
 			bltz $t1, if4			# row - 1 >= 0
-
 			get_byte($t1, $s2, $s3, $a0)			# cell [row - 1][col]
 			andi $t3, $s3, CELL_REVEALED
 			beq $t3, CELL_REVEALED, if4	# && cell[row - 1][col] is hidden
