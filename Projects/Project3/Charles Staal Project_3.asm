@@ -528,8 +528,9 @@ perform_action:
 		move $a1, $s2					# Move Cursor_Row to arg1
 		move $a2, $s3					# Move Cursor_Col to arg2
 		jal search_cells				# Search the adjacent cells to reveal others
-		li $v0, 0					# Since we don't go to draw_cursor, we need to set it here
-		b perform_action_end				# End action
+		b draw_cursor
+		#li $v0, 0					# Since we don't go to draw_cursor, we need to set it here
+		#b perform_action_end				# End action
 
 	flag:							#
 		andi $t1, $t0, CELL_REVEALED			# Make sure the cell is not revealed
