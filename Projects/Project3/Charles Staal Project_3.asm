@@ -84,6 +84,16 @@
 # PART 0 MACROS
 #################################################################
 
+.macro push(%reg)
+	addi $sp, $sp, -4					#
+	sw %reg,  0($sp)					#
+.end_macro
+
+.macro pop(%reg)
+	lw %reg, 0($sp)						#
+	addi $sp, $sp, 4					#
+.end_macro
+
 .macro pack_stack()
 	addi $sp, $sp, -36					#
 	sw $ra, 0($sp)						#
@@ -111,15 +121,15 @@
 .end_macro
 
 .macro zero_cells_array(%address)
-	li $t1, MAX_CELLS					#
-	li $t2, 0						#
+	li $t1, MAX_CELLS					# t1 = MAX_CELLS, will be used as counter
+	li $t2, 0						# The byte we are working on
 
 	zero_cells_array_loop:					#
-		beqz $t1, zero_cells_array_done			#
-		sb $t2, 0(%address)				#
-		addi %address, %address, 1			#
-		addi $t1, $t1, -1				#
-		b zero_cells_array_loop				#
+		beqz $t1, zero_cells_array_done			# If counter = 0, we are done
+		sb $t2, 0(%address)				# Store t2 in to address
+		addi %address, %address, 1			# Increment address by 1
+		addi $t1, $t1, -1				# Decrement counter by 1
+		b zero_cells_array_loop				# Go to the beginning of the loop
 	zero_cells_array_done:					#
 .end_macro
 
@@ -137,16 +147,6 @@
 	map_done:						#
 .end_macro
 
-.macro push(%reg)
-	addi $sp, $sp, -4
-	sw %reg,  0($sp)
-.end_macro
-
-.macro pop(%reg)
-	lw %reg, 0($sp)
-	addi $sp, $sp, 4
-.end_macro
-
 .macro get_byte(%row, %col, %reg_for_byte, %cells_array)
 	li $t9, ROW_SIZE					# Load ROW_SIZE to t9 for multiplication
 	mul %reg_for_byte, %row, $t9				# Multiply Cursor_Row by ROW SIZE
@@ -154,12 +154,13 @@
 	add %reg_for_byte, %cells_array, %reg_for_byte		# Add the cells_array address and now we have the cells cells_array address
 	lb %reg_for_byte, 0(%reg_for_byte)			# Load byte in to the return register for the macro
 .end_macro
+
 .macro store_byte(%row, %col, %byte_to_store, %cells_array)
 	li $t9, ROW_SIZE					# Load ROW_SIZE to t9 for multiplication
-	mul $t9, %row, $t9				# Multiply Cursor_Row by ROW SIZE
-	add $t9, $t9, %col			# Add Cursor_Col and Cursor_Row * ROW_SIZE
-	add $t9, %cells_array, $t9		# Add the cells_array address and now we have the cells cells_array address
-	sb %byte_to_store, 0($t9)			# Load byte in to the return register for the macro
+	mul $t9, %row, $t9					# Multiply Cursor_Row by ROW SIZE
+	add $t9, $t9, %col					# Add Cursor_Col and Cursor_Row * ROW_SIZE
+	add $t9, %cells_array, $t9				# Add the cells_array address and now we have the cells cells_array address
+	sb %byte_to_store, 0($t9)				# Load byte in to the return register for the macro
 .end_macro
 #################################################################
 # PART 1 FUNCTIONS
@@ -605,18 +606,17 @@ game_status:
 	# t3 = Number of flagged bombs
 	# t4 = Number of flags
 	# t7 = Number of revealed cells
-	# t8 = MAX_CELLS
 	# t9 = Scrap
-	move $s0, $a0
-	li $t0, 0
-	li $t1, 0
-	li $t2, 0
-	li $t3, 0
-	li $t4, 0
-	li $t7, 0
-	li $t5, 0
-	li $t8, MAX_CELLS
-	li $t9, 0
+
+	move $s0, $a0						# Move cells_array address to s0
+	li $t0, 0						# Counter will start at 0
+	li $t1, 0						# Byte from cells_array will be stored here
+	li $t2, 0						# Number of bombs
+	li $t3, 0						# Number of flagged bombs
+	li $t4, 0						# Number of flags
+	li $t5, 0						# Number of revealed cells
+	li $t9, 0						# Scrap
+
 	game_status_loop:					#
 		beq $t0, MAX_CELLS, check_win_condition		# If we are done going through the map, check the win condition
 		lb $t1, 0($s0)					# Load byte from cells_array to t1
@@ -625,22 +625,22 @@ game_status:
 
 		andi $t9, $t1, CONT_BOMB			# AND the byte with CONT_BOMB to zero out all bits except bomb bit
 		beqz $t9, skip_bomb				# If the bit is 0, skip incrementing the bomb counter
-		addi $t2, $t2, 1				# increment bomb counter
+		addi $t2, $t2, 1				# Increment the bomb counter
 		skip_bomb:					#
 
-		andi $t9, $t1, FLAGGED_BOMB			# AND the byte with CONT_BOMB to zero out all bits except bomb bit
-		bne $t9, FLAGGED_BOMB, skip_flagged_bomb	# If the bit is 0, skip incrementing the bomb counter
-		addi $t3, $t3, 1				# increment bomb counter
+		andi $t9, $t1, FLAGGED_BOMB			# AND the byte with FLAGGED_BOMB to zero out all bits except bomb and flag bit
+		bne $t9, FLAGGED_BOMB, skip_flagged_bomb	# If the byte does not equal FLAGGED BOMB, skip incrementing the bomb counter
+		addi $t3, $t3, 1				# Increment the flagged bomb counter
 		skip_flagged_bomb:				#
 
-		andi $t9, $t1, CONT_FLAG			#
-		beqz $t9, skip_flag				#
-		addi $t4, $t4, 1				#
+		andi $t9, $t1, CONT_FLAG			# AND the byte with CONT_FLAG to zero out all the bits except flag bit
+		beqz $t9, skip_flag				# If the bit is 0, skip incrementing the bomb counter
+		addi $t4, $t4, 1				# Increment the flag counter
 		skip_flag:					#
 
-		andi $t9, $t1, CELL_REVEALED			#
-		beqz $t9, skip_revealed_cell			#
-		addi $t7, $t7, 1				#
+		andi $t9, $t1, CELL_REVEALED			# AND the byte with CELL_REVEALED to zero out all the bits except the revealed bit
+		beqz $t9, skip_revealed_cell			# If the bit is 0, skip incrementing the revealed counter
+		addi $t5, $t5, 1				# Increment the revealed coutner
 		skip_revealed_cell:				#
 
 		addi $s0, $s0, 1				# Increment the cells_array address by 1
@@ -648,15 +648,15 @@ game_status:
 		b game_status_loop				#
 	
 	check_win_condition:					#
-		add $t9, $t7, $t2
-		beq $t9, MAX_CELLS, game_win
-		bne $t3, $t4, game_ongoing
-		bne $t4, $t2, game_ongoing
-		b game_win					#
+		add $t9, $t5, $t2				# Add the revealed counter + bomb counter
+		beq $t9, MAX_CELLS, game_win			# If it equals MAX_CELLS, we won
+		bne $t3, $t4, game_ongoing			# If flagged bombs and flags aren't equal, we haven't won
+		bne $t4, $t2, game_ongoing			# If Bombs and flags aren't equal, we haven't won
+		b game_win					# Else we won!
 		
 	game_win:						#
-		li $v0, 1					#
-		b game_status_end				#
+		li $v0, 1					# If the game is won, return 1
+		b game_status_end				# Go to the end of game status
 
 	game_ongoing:						#
 		li $v0, 0					# If the game is ongoing, return 0
@@ -683,6 +683,7 @@ search_cells:
 	# s3 = byte from cells_array
 	# t3 = modified byte
 	# s7 = ROW_SIZE for mult
+
 	pack_stack()						# Lets save the stack
 	move $fp, $sp						# fp = sp
 	push($a1)						# sp.push(row)
@@ -690,8 +691,8 @@ search_cells:
 
 	search_cells_loop:					# The loop
 		beq $fp, $sp, search_cells_done			# While(sp != fp)
-		pop($s2)
-		pop($s1)
+		pop($s2)					#
+		pop($s1)					#
 		# if (!cell[row][col].isFlag())
 		get_byte($s1, $s2, $s3, $a0)			# 
 		andi $t4, $s3, CONT_FLAG			#
@@ -699,135 +700,132 @@ search_cells:
 
 		move $a1, $s1					#
 		move $a2, $s2					#
-		ori $s3, $s3, CELL_REVEALED
-		store_byte($s1, $s2, $s3, $a0)
+		ori $s3, $s3, CELL_REVEALED			#
+		store_byte($s1, $s2, $s3, $a0)			#
 		jal draw_current_cell				# cell[row][col].reveal()
-		skip_reveal:
+		skip_reveal:					#
 
 		# if (cell[row][col].getNumber() == 0)
-		andi $t3, $s3, 15
-		bnez $t3, search_cells_loop
+		andi $t3, $s3, 15				#
+		bnez $t3, search_cells_loop			#
 
-			# if (row + 1 < 10 && cell[row + 1][col].isHidden() && !cell[row + 1][col].isFlag())
-			addi $t1, $s1, 1
-			bge $t1, ROW_SIZE, if2		# row + 1 < ROW_SIZE
-			get_byte($t1, $s2, $s3, $a0)			# cell[row + 1][col]
-			andi $t3, $s3, CELL_REVEALED
-			beq $t3, CELL_REVEALED, if2	# && cell[row + 1][col] is hidden
+		# if (row + 1 < 10 && cell[row + 1][col].isHidden() && !cell[row + 1][col].isFlag())
+		if1:						#
+			addi $t1, $s1, 1			#
+			bge $t1, ROW_SIZE, if2			# row + 1 < ROW_SIZE
+			get_byte($t1, $s2, $s3, $a0)		# cell[row + 1][col]
+			andi $t3, $s3, CELL_REVEALED		#
+			beq $t3, CELL_REVEALED, if2		# && cell[row + 1][col] is hidden
 
-			andi $t3, $s3, CONT_FLAG
-			beq $t3, CONT_FLAG, if2		# && cell[row + 1][col] !flag
+			andi $t3, $s3, CONT_FLAG		#
+			beq $t3, CONT_FLAG, if2			# && cell[row + 1][col] !flag
+			push($t1)				#
+			push($s2)				#
 
-			push($t1)
-			push($s2)
+		if2:						#
+		# if (row + 1 < 10 && cell[row][col + 1].isHidden() && !cell[row][col + 1].isFlag())
+			addi $t1, $s1, 1			#
+			bge $t1, ROW_SIZE, if3			# row + 1 < ROW_SIZE
 
-			if2:
-			# if (row + 1 < 10 && cell[row][col + 1].isHidden() && !cell[row][col + 1].isFlag())
-			addi $t1, $s1, 1
-			bge $t1, ROW_SIZE, if3		# row + 1 < ROW_SIZE
+			addi $t2, $s2, 1			#
+			get_byte($s1, $t2, $s3, $a0)		# cell[row][col + 1]
+			andi $t3, $s3, CELL_REVEALED		#
+			beq $t3, CELL_REVEALED, if3		# && cell[row][col + 1] is hidden
 
-			addi $t2, $s2, 1
-			get_byte($s1, $t2, $s3, $a0)			# cell[row][col + 1]
-			andi $t3, $s3, CELL_REVEALED
-			beq $t3, CELL_REVEALED, if3	# && cell[row][col + 1] is hidden
+			andi $t3, $s3, CONT_FLAG		#
+			beq $t3, CONT_FLAG, if3			# && cell[row][col + 1] !flag
+			push($s1)				#
+			push($t2)				#
 
-			andi $t3, $s3, CONT_FLAG
-			beq $t3, CONT_FLAG, if3		# && cell[row][col + 1] !flag
+		if3:						#
+		# if (row - 1 >= 0 && cell[row - 1][col].isHidden() && !cell[row - 1][col].isFlag())
+			addi $t1, $s1, -1			#
+			bltz $t1, if4				# row - 1 >= 0
+			get_byte($t1, $s2, $s3, $a0)		# cell [row - 1][col]
+			andi $t3, $s3, CELL_REVEALED		#
+			beq $t3, CELL_REVEALED, if4		# && cell[row - 1][col] is hidden
 
-			push($s1)
-			push($t2)
+			andi $t3, $s3, CONT_FLAG		#
+			beq $t3, CONT_FLAG, if4			# && cell[row - 1][col] !flag
+			push($t1)				#
+			push($s2)				#
 
-			if3:
-			# if (row - 1 >= 0 && cell[row - 1][col].isHidden() && !cell[row - 1][col].isFlag())
-			addi $t1, $s1, -1
-			bltz $t1, if4			# row - 1 >= 0
-			get_byte($t1, $s2, $s3, $a0)			# cell [row - 1][col]
-			andi $t3, $s3, CELL_REVEALED
-			beq $t3, CELL_REVEALED, if4	# && cell[row - 1][col] is hidden
+		if4:						#
+		# if (row - 1 >= 0 && cell[row][col - 1].isHidden() && !cell[row][col - 1].isFlag())
+			addi $t1, $s1, -1			#
+			bltz $t1, if5				# row - 1 >= 0
 
-			andi $t3, $s3, CONT_FLAG
-			beq $t3, CONT_FLAG, if4		# && cell[row - 1][col] !flag
+			addi $t2, $s2, -1			#
+			get_byte($s1, $t2, $s3, $a0)		#
+			andi $t3, $s3, CELL_REVEALED		#
+			beq $t3, CELL_REVEALED, if5		# && cell[row][col - 1] is hidden
 
-			push($t1)
-			push($s2)
+			andi $t3, $s3, CONT_FLAG		#
+			beq $t3, CONT_FLAG, if5			# && cell[row][col - 1] !flag
+			push($s1)				#
+			push($t2)				#
 
-			if4:
-			# if (row - 1 >= 0 && cell[row][col - 1].isHidden() && !cell[row][col - 1].isFlag())
-			addi $t1, $s1, -1
-			bltz $t1, if5			# row - 1 >= 0
+		if5:						#
+		# if (row - 1 >= 0 && col - 1 >= 0) && cell[row - 1][col - 1].isHidden() && !cell[row - 1][col - 1].isFlag())
+			addi $t1, $s1, -1			#
+			addi $t2, $s2, -1			#
+			bltz $t1, if6				#
+			bltz $t2, if6				#
+			get_byte($t1, $t2, $s3, $a0)		#
+			andi $t3, $s3, CELL_REVEALED		#
+			beq $t3, CELL_REVEALED, if6		# && cell[row - 1][col - 1] is hidden
 
-			addi $t2, $s2, -1
-			get_byte($s1, $t2, $s3, $a0)
-			andi $t3, $s3, CELL_REVEALED
-			beq $t3, CELL_REVEALED, if5	# && cell[row][col - 1] is hidden
+			andi $t3, $s3, CONT_FLAG		#
+			beq $t3, CONT_FLAG, if6			# && cell[row - 1][col - 1] !flag
+			push($t1)				#
+			push($t2)				#
 
-			andi $t3, $s3, CONT_FLAG
-			beq $t3, CONT_FLAG, if5		# && cell[row][col - 1] !flag
+		if6:						#
+		# if (row - 1 >= 0 && col + 1 < 10 && cell[row - 1][col + 1].isHidden() && !cell[row - 1][col + 1].isFlag())
+			addi $t1, $s1, -1			#
+			addi $t2, $s2, 1			#
+			bltz $t1, if7				#
+			bge $t2, COLUMN_SIZE, if7		#
+			get_byte($t1, $t2, $s3, $a0)		#
+			andi $t3, $s3, CELL_REVEALED		#
+			beq $t3, CELL_REVEALED, if7		# && cell[row - 1][col + 1] is hidden
 
-			push($s1)
-			push($t2)
+			andi $t3, $s3, CONT_FLAG		#
+			beq $t3, CONT_FLAG, if7			# && cell[row - 1][col + 1] !flag
+			push($t1)				#
+			push($t2)				#
 
-			if5:
-			# if (row - 1 >= 0 && col - 1 >= 0) && cell[row - 1][col - 1].isHidden() && !cell[row - 1][col - 1].isFlag())
-			addi $t1, $s1, -1
-			addi $t2, $s2, -1
-			bltz $t1, if6
-			bltz $t2, if6
-			get_byte($t1, $t2, $s3, $a0)
-			andi $t3, $s3, CELL_REVEALED
-			beq $t3, CELL_REVEALED, if6	# && cell[row - 1][col - 1] is hidden
+		if7:						#
+		# if (row + 1 < 10 && col - 1 >= 0 && cell[row + 1][col - 1].isHidden() && !cell[row + 1][col - 1].isFlag())
+			addi $t1, $s1, 1			#
+			addi $t2, $s2, -1			#
+			bge $t1, ROW_SIZE, if8			#
+			bltz $t2, if8				#
+			get_byte($t1, $t2, $s3, $a0)		#
+			andi $t3, $s3, CELL_REVEALED		#
+			beq $t3, CELL_REVEALED, if8		# && cell[row + 1][col - 1] is hidden
 
-			andi $t3, $s3, CONT_FLAG
-			beq $t3, CONT_FLAG, if6		# && cell[row - 1][col - 1] !flag
-			push($t1)
-			push($t2)
+			andi $t3, $s3, CONT_FLAG		#
+			beq $t3, CONT_FLAG, if8			# && cell[row + 1][col - 1] !flag
+			push($t1)				#
+			push($t2)				#
 
-			if6:
-			# if (row - 1 >= 0 && col + 1 < 10 && cell[row - 1][col + 1].isHidden() && !cell[row - 1][col + 1].isFlag())
-			addi $t1, $s1, -1
-			addi $t2, $s2, 1
-			bltz $t1, if7
-			bge $t2, COLUMN_SIZE, if7
-			get_byte($t1, $t2, $s3, $a0)
-			andi $t3, $s3, CELL_REVEALED
-			beq $t3, CELL_REVEALED, if7	# && cell[row - 1][col + 1] is hidden
+		if8:						#
+		# if (row + 1 < 10 && col + 1 < 10 && cell[row + 1][col + 1].isHidden() && !cell[row + 1][col + 1].isFlag())
+			addi $t1, $s1, 1			#
+			addi $t2, $s2, 1			#
+			bge $t1, ROW_SIZE, search_cells_loop	#
+			bge $t2, COLUMN_SIZE, search_cells_loop	#
+			get_byte($t1, $t2, $s3, $a0)		#
+			andi $t3, $s3, CELL_REVEALED		#
+			beq $t3, CELL_REVEALED, search_cells_loop# && cell[row + 1][col + 1] is hidden
 
-			andi $t3, $s3, CONT_FLAG
-			beq $t3, CONT_FLAG, if7		# && cell[row - 1][col + 1] !flag
-			push($t1)
-			push($t2)
-
-			if7:
-			# if (row + 1 < 10 && col - 1 >= 0 && cell[row + 1][col - 1].isHidden() && !cell[row + 1][col - 1].isFlag())
-			addi $t1, $s1, 1
-			addi $t2, $s2, -1
-			bge $t1, ROW_SIZE, if8
-			bltz $t2, if8
-			get_byte($t1, $t2, $s3, $a0)
-			andi $t3, $s3, CELL_REVEALED
-			beq $t3, CELL_REVEALED, if8	# && cell[row + 1][col - 1] is hidden
-
-			andi $t3, $s3, CONT_FLAG
-			beq $t3, CONT_FLAG, if8		# && cell[row + 1][col - 1] !flag
-			push($t1)
-			push($t2)
-
-			if8:
-			# if (row + 1 < 10 && col + 1 < 10 && cell[row + 1][col + 1].isHidden() && !cell[row + 1][col + 1].isFlag())
-			addi $t1, $s1, 1
-			addi $t2, $s2, 1
-			bge $t1, ROW_SIZE, search_cells_loop
-			bge $t2, COLUMN_SIZE, search_cells_loop
-			get_byte($t1, $t2, $s3, $a0)
-			andi $t3, $s3, CELL_REVEALED
-			beq $t3, CELL_REVEALED, search_cells_loop	# && cell[row + 1][col + 1] is hidden
-
-			andi $t3, $s3, CONT_FLAG
-			beq $t3, CONT_FLAG, search_cells_loop		# && cell[row + 1][col + 1] !flag
-			push($t1)
-			push($t2)
-			b search_cells_loop
-	search_cells_done:
+			andi $t3, $s3, CONT_FLAG		#
+			beq $t3, CONT_FLAG, search_cells_loop	#  && cell[row + 1][col + 1] !flag
+			push($t1)				#
+			push($t2)				#
+			b search_cells_loop			#
+	search_cells_done:					#
 	unpack_stack()
 	jr $ra
 #################################################################
