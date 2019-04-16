@@ -515,11 +515,8 @@ perform_action:
 	b erronous_input					# Else it's erronous input
 
 	reveal:							#
-		andi $t1, $t0, CONT_FLAG			# First we need to make sure it doesn't contain a flag
-		bne $t1, CONT_FLAG, skip_remove_flag		# If it doesn't, skip removing it
-		xori $t0, $t0, CONT_FLAG			# If it does, xor the bit to toggle it
-		skip_remove_flag:				# Go here if there is not a flag
 		ori $t0, $t0, CELL_REVEALED			# Toggle CELL_REVEALED bit to 1
+		andi $t0, $t0, 47				# Preserve bits except flag
 		sb $t0, 0($s4)					# Store the bit to cells_array
 		move $a1, $s2					# Move Cursor_Row to arg1
 		move $a2, $s3					# Move Cursor_Col to arg2
@@ -529,8 +526,6 @@ perform_action:
 		move $a2, $s3					# Move Cursor_Col to arg2
 		jal search_cells				# Search the adjacent cells to reveal others
 		b draw_cursor
-		#li $v0, 0					# Since we don't go to draw_cursor, we need to set it here
-		#b perform_action_end				# End action
 
 	flag:							#
 		andi $t1, $t0, CELL_REVEALED			# Make sure the cell is not revealed
@@ -606,50 +601,62 @@ game_status:
 	# v0 = -1 if lost, 0 if ongoing, 1 if won
 	# t0 = Counter
 	# t1 = Byte from cells_array
-	# t2 = Number of boxes revealed
-	# t3 = Number of bombs
-	# t4 = Number of correct flags
-	# t5 = Scrap
-
-	move $s0, $a0						# Move cells_array address in to s0
-	li $t2, 0						# Set revealed counter to 0
-	li $t3, 0						# Set bomb counter to 0
-	li $t4, 0						# Set correct flag counter to 0
-
+	# t2 = Number of bombs
+	# t3 = Number of flagged bombs
+	# t4 = Number of flags
+	# t7 = Number of revealed cells
+	# t8 = MAX_CELLS
+	# t9 = Scrap
+	move $s0, $a0
+	li $t0, 0
+	li $t1, 0
+	li $t2, 0
+	li $t3, 0
+	li $t4, 0
+	li $t7, 0
+	li $t5, 0
+	li $t8, MAX_CELLS
+	li $t9, 0
 	game_status_loop:					#
 		beq $t0, MAX_CELLS, check_win_condition		# If we are done going through the map, check the win condition
 		lb $t1, 0($s0)					# Load byte from cells_array to t1
 
 		beq $t1, EXPLODED_BOMB, game_lost_exploded_bomb	# If it's equal to the exploded bomb, we lost
 
-		andi $t5, $t1, CELL_REVEALED			# AND the byte with CELL_REVEALED to check the 5th bit
-		beq $t5, CELL_REVEALED, log_revealed_cell	# If it's equal to itself, we know it's a revealed cell, now we must check if it's a bomb
+		andi $t9, $t1, CONT_BOMB			# AND the byte with CONT_BOMB to zero out all bits except bomb bit
+		beqz $t9, skip_bomb				# If the bit is 0, skip incrementing the bomb counter
+		addi $t2, $t2, 1				# increment bomb counter
+		skip_bomb:					#
 
-		andi $t5, $t1, CONT_FLAG			# AND the byte with CONT_FLAG to see if it's flagged
-		beq $t5, CONT_FLAG, check_flagged_cell		# If it's equal to itself, we know it contains a flag, we must check if that flag is correct
+		andi $t9, $t1, FLAGGED_BOMB			# AND the byte with CONT_BOMB to zero out all bits except bomb bit
+		bne $t9, FLAGGED_BOMB, skip_flagged_bomb	# If the bit is 0, skip incrementing the bomb counter
+		addi $t3, $t3, 1				# increment bomb counter
+		skip_flagged_bomb:				#
 
-		return_to_game_status_loop:			#
+		andi $t9, $t1, CONT_FLAG			#
+		beqz $t9, skip_flag				#
+		addi $t4, $t4, 1				#
+		skip_flag:					#
+
+		andi $t9, $t1, CELL_REVEALED			#
+		beqz $t9, skip_revealed_cell			#
+		addi $t7, $t7, 1				#
+		skip_revealed_cell:				#
+
 		addi $s0, $s0, 1				# Increment the cells_array address by 1
 		addi $t0, $t0, 1				# Increment the counter by 1
 		b game_status_loop				#
-
-	log_revealed_cell:					#
-		addi $t2, $t2, 1				# Add 1 to number of boxes revealed
-		b return_to_game_status_loop			# Return to game loop by the end of it
-
-	check_flagged_cell:					#
-		andi $t5, $t1, CONT_BOMB			# Check to see if the flagged cell is correctly flagged
-		bne $t5, CONT_BOMB, game_ongoing		# If it is not correctly flagged, the game is stil on
-		addi $t4, $t4, 1				# If it is correctly flagged, increment the correct flag counter by 1
-		b return_to_game_status_loop			# Return to the status loop
-
+	
 	check_win_condition:					#
-		add $t5, $t2, $t4				# Add the revealed cells and the correct flags together
-		bne $t5, MAX_CELLS, game_ongoing		# If it is not equal to MAX_CELLS, we know the game is still going
-
-	game_won_status:					#
-		li $v0, 1					# If the game is won, return 1
-		b game_status_end				# Go to the end of game_status
+		add $t9, $t7, $t2
+		beq $t9, MAX_CELLS, game_win
+		bne $t3, $t4, game_ongoing
+		bne $t4, $t2, game_ongoing
+		b game_win					#
+		
+	game_win:						#
+		li $v0, 1					#
+		b game_status_end				#
 
 	game_ongoing:						#
 		li $v0, 0					# If the game is ongoing, return 0
