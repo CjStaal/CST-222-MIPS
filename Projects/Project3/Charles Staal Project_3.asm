@@ -675,12 +675,12 @@ search_cells:
 
 	search_cells_loop:					# The loop
 		beq $sp, $fp, search_cells_done			# While(sp != fp)
-		pop($s2)					# int col = s.pop()
+		pop($s2)					# int col = s.pop(), Had to reverse these as the stack is FILO
 		pop($s1)					# int row = s.pop()
 
 		# if (!cell[row][col].isFlag())
 		get_byte($s1, $s2, $s3, $a0)			# 
-		andi $t4, $t3, CONT_FLAG			#
+		andi $t4, $s3, CONT_FLAG			#
 		beq $t4, CONT_FLAG, skip_reveal			# if (!cell[row][col].isFlag())
 
 		move $a1, $s1					#
@@ -809,7 +809,7 @@ search_cells:
 			beq $t3, CONT_FLAG, search_cells_loop		# && cell[row + 1][col + 1] !flag
 			push($t1)
 			push($t2)
-
+			b search_cells_loop
 	search_cells_done:
 	unpack_stack()
 	jr $ra
