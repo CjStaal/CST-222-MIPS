@@ -669,6 +669,7 @@ search_cells:
 	# t3 = modified byte
 	
 	pack_stack()						# Lets save the stack
+	move $s0, $a0
 	move $fp, $sp						# fp = sp
 	push($a1)						# sp.push(row)
 	push($a2)						# sp.push(col)
@@ -683,6 +684,7 @@ search_cells:
 		andi $t4, $s3, CONT_FLAG			#
 		beq $t4, CONT_FLAG, skip_reveal			# if (!cell[row][col].isFlag())
 
+		move $a0, $s0
 		move $a1, $s1					#
 		move $a2, $s2					#
 		jal draw_current_cell				# cell[row][col].reveal()
