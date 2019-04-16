@@ -139,17 +139,17 @@
 
 .macro push(%reg)
 	addi $sp, $sp, -4
-	sw %reg, 0($sp)
+	sw %reg, ($sp)
 .end_macro
 
 .macro pop(%reg)
-	lw %reg, 0($sp)
-	addi $sp, $sp, 4
+	lw %reg, ($sp)
+	addiu $sp, $sp, 4
 .end_macro
 
 .macro get_byte(%row, %col, %reg_for_byte, %cells_array)
 	li $t9, ROW_SIZE					# Load ROW_SIZE to t9 for multiplication
-	mul %reg_for_byte, %row, $t9				# Multiply Cursor_Row bt ROW SIZE
+	mul %reg_for_byte, %row, $t9				# Multiply Cursor_Row by ROW SIZE
 	add %reg_for_byte, %reg_for_byte, %col			# Add Cursor_Col and Cursor_Row * ROW_SIZE
 	add %reg_for_byte, %cells_array, %reg_for_byte		# Add the cells_array address and now we have the cells cells_array address
 	lb %reg_for_byte, 0(%reg_for_byte)			# Load byte in to the return register for the macro
@@ -517,6 +517,7 @@ perform_action:
 		move $a1, $s2					# Move Cursor_Row to arg1
 		move $a2, $s3					# Move Cursor_Col to arg2
 		jal draw_current_cell				# Draw the current cell
+		move $a0, $s0					# Load cells_array address in a0
 		move $a1, $s2					# Move Cursor_Row to arg1
 		move $a2, $s3					# Move Cursor_Col to arg2
 		jal search_cells				# Search the adjacent cells to reveal others
@@ -674,16 +675,16 @@ search_cells:
 
 	search_cells_loop:					# The loop
 		beq $sp, $fp, search_cells_done			# While(sp != fp)
-		pop($s1)					# int row = s.pop()
 		pop($s2)					# int col = s.pop()
+		pop($s1)					# int row = s.pop()
 
 		# if (!cell[row][col].isFlag())
 		get_byte($s1, $s2, $s3, $a0)			# 
 		andi $t4, $t3, CONT_FLAG			#
 		beq $t4, CONT_FLAG, skip_reveal			# if (!cell[row][col].isFlag())
 
-		move $a1, $t1					#
-		move $a2, $t2					#
+		move $a1, $s1					#
+		move $a2, $s2					#
 		jal draw_current_cell				# cell[row][col].reveal()
 		skip_reveal:
 
@@ -771,11 +772,11 @@ search_cells:
 			bge $t2, COLUMN_SIZE, search_cells_loop
 			get_byte($t1, $t2, $s3, $a0)
 			andi $t3, $s3, CELL_REVEALED
-			beq $t3, CELL_REVEALED, search_cells_loop	# && cell[row - 1][col - 1] is hidden
+			beq $t3, CELL_REVEALED, search_cells_loop	# && cell[row - 1][col + 1] is hidden
 
 
 			andi $t3, $s3, CONT_FLAG
-			beq $t3, CONT_FLAG, search_cells_loop		# && cell[row - 1][col - 1] !flag
+			beq $t3, CONT_FLAG, search_cells_loop		# && cell[row - 1][col + 1] !flag
 			push($t1)
 			push($t2)
 
@@ -786,11 +787,11 @@ search_cells:
 			bltz $t2, search_cells_loop
 			get_byte($t1, $t2, $s3, $a0)
 			andi $t3, $s3, CELL_REVEALED
-			beq $t3, CELL_REVEALED, search_cells_loop	# && cell[row - 1][col - 1] is hidden
+			beq $t3, CELL_REVEALED, search_cells_loop	# && cell[row + 1][col - 1] is hidden
 
 
 			andi $t3, $s3, CONT_FLAG
-			beq $t3, CONT_FLAG, search_cells_loop		# && cell[row - 1][col - 1] !flag
+			beq $t3, CONT_FLAG, search_cells_loop		# && cell[row + 1][col - 1] !flag
 			push($t1)
 			push($t2)
 
@@ -801,11 +802,11 @@ search_cells:
 			bge $t2, COLUMN_SIZE, search_cells_loop
 			get_byte($t1, $t2, $s3, $a0)
 			andi $t3, $s3, CELL_REVEALED
-			beq $t3, CELL_REVEALED, search_cells_loop	# && cell[row - 1][col - 1] is hidden
+			beq $t3, CELL_REVEALED, search_cells_loop	# && cell[row + 1][col + 1] is hidden
 
 
 			andi $t3, $s3, CONT_FLAG
-			beq $t3, CONT_FLAG, search_cells_loop		# && cell[row - 1][col - 1] !flag
+			beq $t3, CONT_FLAG, search_cells_loop		# && cell[row + 1][col + 1] !flag
 			push($t1)
 			push($t2)
 
