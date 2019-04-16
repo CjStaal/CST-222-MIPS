@@ -244,7 +244,7 @@ load_map:
 
 	pack_stack()						# Preserve the stack since there is a nested function
 	move $s0, $a1						# Move cells_array address to t0
-	zero_cells_array($t0)					# Make sure the cells_array is all zero'd 
+	zero_cells_array($s0)					# Make sure the cells_array is all zero'd 
 	move $s0, $a1						# s0 will be the base address of the cells_array (redoing since the macro incremented it)
 	li $s1, 0						# s1 will be the cell location/offset of the cells_array
 	li $v0, READ_FROM_FILE					# Set the syscall to read from file
@@ -517,6 +517,8 @@ perform_action:
 		move $a1, $s2					# Move Cursor_Row to arg1
 		move $a2, $s3					# Move Cursor_Col to arg2
 		jal draw_current_cell				# Draw the current cell
+		move $a1, $s2					# Move Cursor_Row to arg1
+		move $a2, $s3					# Move Cursor_Col to arg2
 		jal search_cells				# Search the adjacent cells to reveal others
 		li $v0, 0					# Since we don't go to draw_cursor, we need to set it here
 		b perform_action_end				# End action
