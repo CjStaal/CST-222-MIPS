@@ -591,7 +591,11 @@ perform_action:
 
 	erronous_input:						#
 		li $v0, -1					# Load -1 for return
+		b perform_action_end
 
+	draw_map:
+		move $a0, $s0
+		jal draw_whole_map
 	perform_action_end:					#
 	unpack_stack()						# Restore the stack
 	jr $ra							# Return to previous address
@@ -696,13 +700,14 @@ search_cells:
 		# if (!cell[row][col].isFlag())
 		get_byte($s1, $s2, $s3, $a0)			# 
 		andi $t4, $s3, CONT_FLAG			#
+		move $a1, $s1					#
+		move $a2, $s2					#
 		beq $t4, CONT_FLAG, skip_reveal			# if (!cell[row][col].isFlag())
 
 		move $a1, $s1					#
 		move $a2, $s2					#
 		ori $s3, $s3, CELL_REVEALED			#
-		store_byte($s1, $s2, $s3, $a0)			#
-		jal draw_current_cell				# cell[row][col].reveal()
+		store_byte($a1, $a2, $s3, $a0)			#
 		skip_reveal:					#
 
 		# if (cell[row][col].getNumber() == 0)
@@ -826,11 +831,37 @@ search_cells:
 			push($t2)				#
 			b search_cells_loop			#
 	search_cells_done:					#
+	move $a0, $s0
+	jal draw_whole_map
 	unpack_stack()
 	jr $ra
 #################################################################
 # PART 6 STUDENT DEFINED FUNCTIONS
 #################################################################
+draw_whole_map:
+	# a0 = cells_array address
+	pack_stack()
+	move $s0, $a0
+	li $s1, 0
+	li $s2, 0
+	x_loop:
+		beq $s1, ROW_SIZE, whole_map_done
+		y_loop:
+			beq $s2, COLUMN_SIZE, x_loop_return
+			move $a0, $s0
+			move $a1, $s1
+			move $a2, $s2
+			jal draw_current_cell
+			addi $s2, $s2, 1
+			b y_loop
+		x_loop_return:
+			li $s2, 0
+			addi $s1, $s1, 1
+			b x_loop
+	whole_map_done:
+	unpack_stack()
+	jr $ra
+
 draw_current_cell:
 	# a0 = cells_array address
 	# t0/a1 = Cursor row
