@@ -655,6 +655,8 @@ game_status:
 # PART 5 FUNCTIONS
 #################################################################
 
+
+
 search_cells:
 	# a0 = cells_array address
 	# a1 = Row coord
