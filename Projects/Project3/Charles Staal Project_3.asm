@@ -214,14 +214,12 @@ open_file:
 	li $a2, 0						#
 	li $v0, OPEN_FILE					#
 	syscall							#
-
 	jr $ra							#
 
 close_file:
 
 	li $v0, CLOSE_FILE					#
 	syscall							#
-
 	jr $ra							#
 
 load_map:
