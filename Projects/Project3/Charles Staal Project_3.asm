@@ -436,7 +436,6 @@ reveal_map:
 		jal set_cell					# Call set_cell to draw the exploded bomb
 		lw $ra, 0($sp)					# Restore return address from stack
 		addi $sp, $sp, 8				# Come back up the stack
-
 		b reveal_map_end				# Go to end of function
 
 	draw:							#
@@ -696,14 +695,14 @@ search_cells:
 		bnez $t3, search_cells_loop			# If byte != 0, go to start of loop, otherwise start search
 
 		top_left:					#
-			addi $t1, $s1, -1			#
-			addi $t2, $s2, -1			#
-			bltz $t1, left				#
-			bltz $t2, top_middle			#
-			sub $t4, $s4, $s5			#
-			addi $t4, $t4, -1			#
-			lb $s3, 0($t4)				#
-			andi $t3, $s3, CELL_REVEALED		#
+			addi $t1, $s1, -1			# Subtract 1 from row
+			addi $t2, $s2, -1			# Subtract 1 from column
+			bltz $t1, left				# If row < 0, skip row and go to next row
+			bltz $t2, top_middle			# If column < 0, go to next cell
+			sub $t4, $s4, $s5			# Subtract 1 ROW_SIZE from address
+			addi $t4, $t4, -1			# Subtract 1 from address to move left
+			lb $s3, 0($t4)				# Load new byte from new address
+			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
 			beq $t3, CELL_REVEALED, top_middle	#
 			andi $t3, $s3, CONT_FLAG		#
 			beq $t3, CONT_FLAG, top_middle		#
@@ -714,8 +713,8 @@ search_cells:
 			addi $t1, $s1, -1			#
 			bltz $t1, left				#
 			sub $t4, $s4, $s5			#
-			lb $s3, 0($t4)				#
-			andi $t3, $s3, CELL_REVEALED		#
+			lb $s3, 0($t4)				# Load new byte from new address
+			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
 			beq $t3, CELL_REVEALED, top_right	#
 			andi $t3, $s3, CONT_FLAG		#
 			beq $t3, CONT_FLAG, top_right		#
@@ -729,8 +728,8 @@ search_cells:
 			bge $t2, COLUMN_SIZE, left		#
 			sub $t4, $s4, $s5			#
 			addi $t4, $t4, 1			#
-			lb $s3, 0($t4)				#
-			andi $t3, $s3, CELL_REVEALED		#
+			lb $s3, 0($t4)				# Load new byte from new address
+			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
 			beq $t3, CELL_REVEALED, left		#
 			andi $t3, $s3, CONT_FLAG		#
 			beq $t3, CONT_FLAG, left		#
@@ -742,8 +741,8 @@ search_cells:
 			bltz $t2, right				#
 			move $t4, $s4				#
 			addi $t4, $t4, -1			#
-			lb $s3, 0($t4)				#
-			andi $t3, $s3, CELL_REVEALED		#
+			lb $s3, 0($t4)				# Load new byte from new address
+			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
 			beq $t3, CELL_REVEALED, right		#
 			andi $t3, $s3, CONT_FLAG		#
 			beq $t3, CONT_FLAG, right		#
@@ -755,8 +754,8 @@ search_cells:
 			bge $t2, COLUMN_SIZE, bottom_left	#
 			move $t4, $s4				#
 			addi $t4, $t4, 1			#
-			lb $s3, 0($t4)				#
-			andi $t3, $s3, CELL_REVEALED		#
+			lb $s3, 0($t4)				# Load new byte from new address
+			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
 			beq $t3, CELL_REVEALED, bottom_left	#
 			andi $t3, $s3, CONT_FLAG		#
 			beq $t3, CONT_FLAG, bottom_left		#
@@ -770,8 +769,8 @@ search_cells:
 			bltz $t2, bottom_middle			#
 			add $t4, $s4, $s5			#
 			addi $t4, $t4, -1			#
-			lb $s3, 0($t4)				#
-			andi $t3, $s3, CELL_REVEALED		#
+			lb $s3, 0($t4)				# Load new byte from new address
+			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
 			beq $t3, CELL_REVEALED, bottom_middle	#
 			andi $t3, $s3, CONT_FLAG		#
 			beq $t3, CONT_FLAG, bottom_middle	#
@@ -782,8 +781,8 @@ search_cells:
 			addi $t1, $s1, 1			#
 			bge $t1, ROW_SIZE, search_cells_loop	#
 			add $t4, $s4, $s5			#
-			lb $s3, 0($t4)				#
-			andi $t3, $s3, CELL_REVEALED		#
+			lb $s3, 0($t4)				# Load new byte from new address
+			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
 			beq $t3, CELL_REVEALED, bottom_right	#
 			andi $t3, $s3, CONT_FLAG		#
 			beq $t3, CONT_FLAG, bottom_right	#
@@ -797,8 +796,8 @@ search_cells:
 			bge $t2, COLUMN_SIZE search_cells_loop	#
 			add $t4, $s4, $s5			#
 			addi $t4, $t4, 1			#
-			lb $s3, 0($t4)				#
-			andi $t3, $s3, CELL_REVEALED		#
+			lb $s3, 0($t4)				# Load new byte from new address
+			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
 			beq $t3, CELL_REVEALED, search_cells_loop#
 			andi $t3, $s3, CONT_FLAG		#
 			beq $t3, CONT_FLAG, search_cells_loop	#
