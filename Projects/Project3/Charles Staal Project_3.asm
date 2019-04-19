@@ -356,10 +356,10 @@ set_cell:
 	li $v0, 0						# There was no error, load 0 in to the return value
 	b set_cell_end						# Go to the end of the function
 
-	set_cell_error:						# Go here if there is any error
+	set_cell_error:						#
 		li $v0, -1					# Load -1 in to the return value
 
-	set_cell_end:						# The end of the function
+	set_cell_end:						#
 		jr $ra						# Return to previous address
 
 reveal_map:
@@ -627,7 +627,7 @@ game_status:
 
 		addi $s0, $s0, 1				# Increment the cells_array address by 1
 		addi $t0, $t0, 1				# Increment the counter by 1
-		b game_status_loop				#
+		b game_status_loop				# Go to start of loop
 	
 	check_win_condition:					#
 		add $t9, $t5, $t2				# Add the revealed counter + bomb counter
@@ -703,111 +703,111 @@ search_cells:
 			addi $t4, $t4, -1			# Subtract 1 from address to move left
 			lb $s3, 0($t4)				# Load new byte from new address
 			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
-			beq $t3, CELL_REVEALED, top_middle	#
-			andi $t3, $s3, CONT_FLAG		#
-			beq $t3, CONT_FLAG, top_middle		#
-			push($t1)				#
-			push($t2)				#
+			beq $t3, CELL_REVEALED, top_middle	# If byte equals CELL_REVEALED, move to next cell
+			andi $t3, $s3, CONT_FLAG		# AND the byte with CONT_FLAG
+			beq $t3, CONT_FLAG, top_middle		# If byte equals CONT_FLAG, move to next cell
+			push($t1)				# Push row to stack
+			push($t2)				# Push column to stack
 
 		top_middle:					#
-			addi $t1, $s1, -1			#
-			bltz $t1, left				#
-			sub $t4, $s4, $s5			#
+			addi $t1, $s1, -1			# Subtract 1 from row
+			bltz $t1, left				# If row < 0, skip row and go to next row
+			sub $t4, $s4, $s5			# Subtract 1 row from cell address
 			lb $s3, 0($t4)				# Load new byte from new address
 			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
-			beq $t3, CELL_REVEALED, top_right	#
-			andi $t3, $s3, CONT_FLAG		#
-			beq $t3, CONT_FLAG, top_right		#
-			push($t1)				#
-			push($s2)				#
+			beq $t3, CELL_REVEALED, top_right	# If byte equals CELL_REVEALED, move to next cell
+			andi $t3, $s3, CONT_FLAG		# AND the byte with CONT_FLAG
+			beq $t3, CONT_FLAG, top_right		# If byte equals CONT_FLAG, move to next cell
+			push($t1)				# Push row to stack
+			push($s2)				# Push column to stack
 
 		top_right:					#
-			addi $t1, $s1, -1			#
-			addi $t2, $s2, 1			#
-			bltz $t1, left				#
-			bge $t2, COLUMN_SIZE, left		#
-			sub $t4, $s4, $s5			#
-			addi $t4, $t4, 1			#
+			addi $t1, $s1, -1			# Subtract 1 from row
+			addi $t2, $s2, 1			# Add 1 to column
+			bltz $t1, left				# If row < 0, skip row and go to next row
+			bge $t2, COLUMN_SIZE, left		# If column > COLUMN_SIZE, skip and go to next cell
+			sub $t4, $s4, $s5			# Subtract 1 row from cell address
+			addi $t4, $t4, 1			# Add 1 column to cell address
 			lb $s3, 0($t4)				# Load new byte from new address
 			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
-			beq $t3, CELL_REVEALED, left		#
-			andi $t3, $s3, CONT_FLAG		#
-			beq $t3, CONT_FLAG, left		#
-			push($t1)				#
-			push($t2)				#
+			beq $t3, CELL_REVEALED, left		# If byte equals CELL_REVEALED, move to next cell
+			andi $t3, $s3, CONT_FLAG		# AND the byte with CONT_FLAG
+			beq $t3, CONT_FLAG, left		# If byte equals CONT_FLAG, move to next cell
+			push($t1)				# Push row to stack
+			push($t2)				# Push column to stack
 
 		left:						#
-			addi $t2, $s2, -1			#
-			bltz $t2, right				#
-			move $t4, $s4				#
-			addi $t4, $t4, -1			#
+			addi $t2, $s2, -1			# Subtract 1 from column
+			bltz $t2, right				# If column < 0, go to next cell
+			move $t4, $s4				# Move cell address to t4
+			addi $t4, $t4, -1			# Subtract 1 column from cell address
 			lb $s3, 0($t4)				# Load new byte from new address
 			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
-			beq $t3, CELL_REVEALED, right		#
-			andi $t3, $s3, CONT_FLAG		#
-			beq $t3, CONT_FLAG, right		#
-			push($s1)				#
-			push($t2)				#
+			beq $t3, CELL_REVEALED, right		# If byte equals CELL_REVEALED, move to next cell
+			andi $t3, $s3, CONT_FLAG		# AND the byte with CONT_FLAG
+			beq $t3, CONT_FLAG, right		# If byte equals CONT_FLAG, move to next cell
+			push($s1)				# Push row to stack
+			push($t2)				# Push column to stack
 
 		right:						#
-			addi $t2, $s2, 1			#
-			bge $t2, COLUMN_SIZE, bottom_left	#
-			move $t4, $s4				#
-			addi $t4, $t4, 1			#
+			addi $t2, $s2, 1			# Add 1 to column
+			bge $t2, COLUMN_SIZE, bottom_left	# If column > COLUMN_SIZE, go to next cell
+			move $t4, $s4				# Move cell address to t4
+			addi $t4, $t4, 1			# Add 1 column to address
 			lb $s3, 0($t4)				# Load new byte from new address
 			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
-			beq $t3, CELL_REVEALED, bottom_left	#
-			andi $t3, $s3, CONT_FLAG		#
-			beq $t3, CONT_FLAG, bottom_left		#
-			push($s1)				#
-			push($t2)				#
+			beq $t3, CELL_REVEALED, bottom_left	# If byte equals CELL_REVEALED, move to next cell
+			andi $t3, $s3, CONT_FLAG		# AND the byte with CONT_FLAG
+			beq $t3, CONT_FLAG, bottom_left		# If byte equals CONT_FLAG, move to next cell
+			push($s1)				# Push row to stack
+			push($t2)				# Push column to stack
 
 		bottom_left:					#
-			addi $t1, $s1, 1			#
-			addi $t2, $s2, -1			#
-			bge $t1, ROW_SIZE, search_cells_loop	#
-			bltz $t2, bottom_middle			#
-			add $t4, $s4, $s5			#
-			addi $t4, $t4, -1			#
+			addi $t1, $s1, 1			# Add 1 to row
+			addi $t2, $s2, -1			# Subtract 1 from column
+			bge $t1, ROW_SIZE, search_cells_loop	# If row > ROW_SIZE, go to start of loop
+			bltz $t2, bottom_middle			# If column < 0, go to next cell
+			add $t4, $s4, $s5			# Add 1 row to address
+			addi $t4, $t4, -1			# Subtract 1 column from address
 			lb $s3, 0($t4)				# Load new byte from new address
 			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
-			beq $t3, CELL_REVEALED, bottom_middle	#
-			andi $t3, $s3, CONT_FLAG		#
-			beq $t3, CONT_FLAG, bottom_middle	#
-			push($t1)				#
-			push($t2)				#
+			beq $t3, CELL_REVEALED, bottom_middle	# If byte equals CELL_REVEALED, move to next cell
+			andi $t3, $s3, CONT_FLAG		# AND the byte with CONT_FLAG
+			beq $t3, CONT_FLAG, bottom_middle	# If byte equals CONT_FLAG, move to next cell
+			push($t1)				# Push row to stack
+			push($t2)				# Push column to stack
 
 		bottom_middle:					#
-			addi $t1, $s1, 1			#
-			bge $t1, ROW_SIZE, search_cells_loop	#
-			add $t4, $s4, $s5			#
+			addi $t1, $s1, 1			# Add 1 to row
+			bge $t1, ROW_SIZE, search_cells_loop	# if row > ROW_SIZE, go to start of loop
+			add $t4, $s4, $s5			# Add 1 row to address
 			lb $s3, 0($t4)				# Load new byte from new address
 			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
-			beq $t3, CELL_REVEALED, bottom_right	#
-			andi $t3, $s3, CONT_FLAG		#
-			beq $t3, CONT_FLAG, bottom_right	#
-			push($t1)				#
-			push($s2)				#
+			beq $t3, CELL_REVEALED, bottom_right	# If byte equals CELL_REVEALED, move to next cell
+			andi $t3, $s3, CONT_FLAG		# AND the byte with CONT_FLAG
+			beq $t3, CONT_FLAG, bottom_right	# If byte equals CONT_FLAG, move to next cell
+			push($t1)				# Push row to stack
+			push($s2)				# Push column to stack
 
 		bottom_right:					#
-			addi $t1, $s1, 1			#
-			addi $t2, $s2, 1			#
-			bge $t1, ROW_SIZE search_cells_loop	#
-			bge $t2, COLUMN_SIZE search_cells_loop	#
-			add $t4, $s4, $s5			#
-			addi $t4, $t4, 1			#
+			addi $t1, $s1, 1			# Add 1 to row
+			addi $t2, $s2, 1			# Add 1 to column
+			bge $t1, ROW_SIZE, search_cells_loop	# if row > ROW_SIZE, go to start of loop
+			bge $t2, COLUMN_SIZE search_cells_loop	# If column > COLUMN_SIZE, go to start of loop
+			add $t4, $s4, $s5			# Add 1 row to address
+			addi $t4, $t4, 1			# Add 1 column to address
 			lb $s3, 0($t4)				# Load new byte from new address
 			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
-			beq $t3, CELL_REVEALED, search_cells_loop#
-			andi $t3, $s3, CONT_FLAG		#
-			beq $t3, CONT_FLAG, search_cells_loop	#
-			push($t1)				#
-			push($t2)				#
-			b search_cells_loop			#
+			beq $t3, CELL_REVEALED, search_cells_loop# If byte equals CELL_REVEALED, move to next cell
+			andi $t3, $s3, CONT_FLAG		# AND the byte with CONT_FLAG
+			beq $t3, CONT_FLAG, search_cells_loop	# If byte equals CONT_FLAG, move to next cell
+			push($t1)				# Push row to stack
+			push($t2)				# Push column to stack
+			b search_cells_loop			# Go to start of loop
 
 	search_cells_done:					#
-	unpack_stack()						#
-	jr $ra							#
+	unpack_stack()						# Restore the stack
+	jr $ra							# Return to previous address
 
 #################################################################
 # PART 6 STUDENT DEFINED FUNCTIONS
