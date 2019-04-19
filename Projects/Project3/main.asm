@@ -96,4 +96,4 @@ main:
 	li	$v0,	10
 	syscall
 
-.include "Charles Staal Project_3.asm"
+.include "Charles_Staal-Project_3.asm"

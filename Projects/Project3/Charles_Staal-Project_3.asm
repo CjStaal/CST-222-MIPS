@@ -428,12 +428,9 @@ reveal_map:
 		li $a3, WHITE_FOREGROUND			# Load white foreground to a3
 		li $t0, BRIGHT_RED_BACKGROUND			# Load bright red background to t0
 
-		addi $sp, $sp, -8				# Go in to the stack by 8
-		sw $t0, 0($sp)					# Store t0 in to the stack
-		sw $ra, 4($sp)					# Save return address on stack
+		push($t0)					#
 		jal set_cell					# Call set_cell to draw the exploded bomb
-		lw $ra, 0($sp)					# Restore return address from stack
-		addi $sp, $sp, 8				# Come back up the stack
+		pop($t0)					#
 		b reveal_map_end				# Go to end of function
 
 	draw:							#
@@ -656,8 +653,6 @@ game_status:
 # PART 5 FUNCTIONS
 #################################################################
 
-
-
 search_cells:
 	# a0 = cells_array address
 	# a1 = Row coord
@@ -696,10 +691,12 @@ search_cells:
 		andi $t3, $s3, 15				# AND byte with 15 to clear out the 4 MSBs
 		bnez $t3, search_cells_loop			# If byte != 0, go to start of loop, otherwise start search
 
+		start_search:
+		addi $t1, $s1, -1				# Subtract 1 from row
+		bltz $t1, middle_row				# If row < 0, skip row and go to next row
+
 		top_left:					#
-			addi $t1, $s1, -1			# Subtract 1 from row
 			addi $t2, $s2, -1			# Subtract 1 from column
-			bltz $t1, left				# If row < 0, skip row and go to next row
 			bltz $t2, top_middle			# If column < 0, go to next cell
 			sub $t4, $s4, $s5			# Subtract 1 ROW_SIZE from address
 			addi $t4, $t4, -1			# Subtract 1 from address to move left
@@ -712,8 +709,6 @@ search_cells:
 			push($t2)				# Push column to stack
 
 		top_middle:					#
-			addi $t1, $s1, -1			# Subtract 1 from row
-			bltz $t1, left				# If row < 0, skip row and go to next row
 			sub $t4, $s4, $s5			# Subtract 1 row from cell address
 			lb $s3, 0($t4)				# Load new byte from new address
 			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
@@ -724,20 +719,19 @@ search_cells:
 			push($s2)				# Push column to stack
 
 		top_right:					#
-			addi $t1, $s1, -1			# Subtract 1 from row
 			addi $t2, $s2, 1			# Add 1 to column
-			bltz $t1, left				# If row < 0, skip row and go to next row
-			bge $t2, COLUMN_SIZE, left		# If column > COLUMN_SIZE, skip and go to next cell
+			bge $t2, COLUMN_SIZE, middle_row		# If column > COLUMN_SIZE, skip and go to next cell
 			sub $t4, $s4, $s5			# Subtract 1 row from cell address
 			addi $t4, $t4, 1			# Add 1 column to cell address
 			lb $s3, 0($t4)				# Load new byte from new address
 			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
-			beq $t3, CELL_REVEALED, left		# If byte equals CELL_REVEALED, move to next cell
+			beq $t3, CELL_REVEALED, middle_row		# If byte equals CELL_REVEALED, move to next cell
 			andi $t3, $s3, CONT_FLAG		# AND the byte with CONT_FLAG
-			beq $t3, CONT_FLAG, left		# If byte equals CONT_FLAG, move to next cell
+			beq $t3, CONT_FLAG, middle_row		# If byte equals CONT_FLAG, move to next cell
 			push($t1)				# Push row to stack
 			push($t2)				# Push column to stack
 
+		middle_row:
 		left:						#
 			addi $t2, $s2, -1			# Subtract 1 from column
 			bltz $t2, right				# If column < 0, go to next cell
@@ -753,21 +747,23 @@ search_cells:
 
 		right:						#
 			addi $t2, $s2, 1			# Add 1 to column
-			bge $t2, COLUMN_SIZE, bottom_left	# If column > COLUMN_SIZE, go to next cell
+			bge $t2, COLUMN_SIZE, bottom_row	# If column > COLUMN_SIZE, go to next cell
 			move $t4, $s4				# Move cell address to t4
 			addi $t4, $t4, 1			# Add 1 column to address
 			lb $s3, 0($t4)				# Load new byte from new address
 			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
-			beq $t3, CELL_REVEALED, bottom_left	# If byte equals CELL_REVEALED, move to next cell
+			beq $t3, CELL_REVEALED, bottom_row	# If byte equals CELL_REVEALED, move to next cell
 			andi $t3, $s3, CONT_FLAG		# AND the byte with CONT_FLAG
-			beq $t3, CONT_FLAG, bottom_left		# If byte equals CONT_FLAG, move to next cell
+			beq $t3, CONT_FLAG, bottom_row		# If byte equals CONT_FLAG, move to next cell
 			push($s1)				# Push row to stack
 			push($t2)				# Push column to stack
 
+		bottom_row:
+		
+		addi $t1, $s1, 1			# Add 1 to row
+		bge $t1, ROW_SIZE, search_cells_loop	# If row > ROW_SIZE, go to start of loop
 		bottom_left:					#
-			addi $t1, $s1, 1			# Add 1 to row
 			addi $t2, $s2, -1			# Subtract 1 from column
-			bge $t1, ROW_SIZE, search_cells_loop	# If row > ROW_SIZE, go to start of loop
 			bltz $t2, bottom_middle			# If column < 0, go to next cell
 			add $t4, $s4, $s5			# Add 1 row to address
 			addi $t4, $t4, -1			# Subtract 1 column from address
@@ -780,8 +776,6 @@ search_cells:
 			push($t2)				# Push column to stack
 
 		bottom_middle:					#
-			addi $t1, $s1, 1			# Add 1 to row
-			bge $t1, ROW_SIZE, search_cells_loop	# if row > ROW_SIZE, go to start of loop
 			add $t4, $s4, $s5			# Add 1 row to address
 			lb $s3, 0($t4)				# Load new byte from new address
 			andi $t3, $s3, CELL_REVEALED		# AND byte with CELL_REVEALED
@@ -792,9 +786,7 @@ search_cells:
 			push($s2)				# Push column to stack
 
 		bottom_right:					#
-			addi $t1, $s1, 1			# Add 1 to row
 			addi $t2, $s2, 1			# Add 1 to column
-			bge $t1, ROW_SIZE, search_cells_loop	# if row > ROW_SIZE, go to start of loop
 			bge $t2, COLUMN_SIZE search_cells_loop	# If column > COLUMN_SIZE, go to start of loop
 			add $t4, $s4, $s5			# Add 1 row to address
 			addi $t4, $t4, 1			# Add 1 column to address
