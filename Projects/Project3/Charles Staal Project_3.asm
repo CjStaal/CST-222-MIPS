@@ -665,8 +665,9 @@ search_cells:
 	# t2 = modified col
 	# s3 = byte from cells_array
 	# t3 = modified byte
-	# s7 = ROW_SIZE for mult
-	# t4 = cells_array address + offset
+	# s4 = cells_array + offset
+	# s5 = ROW_SIZE for mult
+	# t4 = offset
 	pack_stack()						# Lets save the stack
 	move $fp, $sp						# fp = sp
 	push($a1)						# sp.push(row)
@@ -676,11 +677,11 @@ search_cells:
 		beq $fp, $sp, search_cells_done			#
 		pop($s2)					#
 		pop($s1)					#
-		li $t4, ROW_SIZE
-		mul $s4, $s1, $t4
-		add $s4, $s4, $s2
-		add $s4, $s4, $a0
-		lb $s3, 0($s4)
+		li $s5, ROW_SIZE				#
+		mul $s4, $s1, $s5				#
+		add $s4, $s4, $s2				#
+		add $s4, $s4, $a0				#
+		lb $s3, 0($s4)					#
 		andi $t3, $s3, CONT_FLAG			#
 		beq $t3, CONT_FLAG, skip_reveal			#
 		ori $s3, $s3, CELL_REVEALED			#
@@ -691,13 +692,15 @@ search_cells:
 		skip_reveal:					#
 		andi $t3, $s3, 15				#
 		bnez $t3, search_cells_loop			#
-		start_search:					#
+
 		top_left:					#
 			addi $t1, $s1, -1			#
 			addi $t2, $s2, -1			#
-			bltz $t1, top_middle			#
+			bltz $t1, left				#
 			bltz $t2, top_middle			#
-			lb $s3, -11($s4)
+			sub $t4, $s4, $s5			#
+			addi $t4, $t4, -1			#
+			lb $s3, 0($t4)				#
 			andi $t3, $s3, CELL_REVEALED		#
 			beq $t3, CELL_REVEALED, top_middle	#
 			andi $t3, $s3, CONT_FLAG		#
@@ -707,8 +710,9 @@ search_cells:
 
 		top_middle:					#
 			addi $t1, $s1, -1			#
-			bltz $t1, top_right			#
-			lb $s3, -10($s4)
+			bltz $t1, left				#
+			sub $t4, $s4, $s5			#
+			lb $s3, 0($t4)				#
 			andi $t3, $s3, CELL_REVEALED		#
 			beq $t3, CELL_REVEALED, top_right	#
 			andi $t3, $s3, CONT_FLAG		#
@@ -721,7 +725,9 @@ search_cells:
 			addi $t2, $s2, 1			#
 			bltz $t1, left				#
 			bge $t2, COLUMN_SIZE, left		#
-			lb $s3, -9($s4)
+			sub $t4, $s4, $s5			#
+			addi $t4, $t4, 1			#
+			lb $s3, 0($t4)				#
 			andi $t3, $s3, CELL_REVEALED		#
 			beq $t3, CELL_REVEALED, left		#
 			andi $t3, $s3, CONT_FLAG		#
@@ -732,7 +738,9 @@ search_cells:
 		left:						#
 			addi $t2, $s2, -1			#
 			bltz $t2, right				#
-			lb $s3, -1($s4)
+			move $t4, $s4				#
+			addi $t4, $t4, -1			#
+			lb $s3, 0($t4)				#
 			andi $t3, $s3, CELL_REVEALED		#
 			beq $t3, CELL_REVEALED, right		#
 			andi $t3, $s3, CONT_FLAG		#
@@ -743,7 +751,9 @@ search_cells:
 		right:						#
 			addi $t2, $s2, 1			#
 			bge $t2, COLUMN_SIZE, bottom_left	#
-			lb $s3, 1($s4)
+			move $t4, $s4				#
+			addi $t4, $t4, 1			#
+			lb $s3, 0($t4)				#
 			andi $t3, $s3, CELL_REVEALED		#
 			beq $t3, CELL_REVEALED, bottom_left	#
 			andi $t3, $s3, CONT_FLAG		#
@@ -754,9 +764,11 @@ search_cells:
 		bottom_left:					#
 			addi $t1, $s1, 1			#
 			addi $t2, $s2, -1			#
-			bge $t1, ROW_SIZE, bottom_middle	#
+			bge $t1, ROW_SIZE, search_cells_loop	#
 			bltz $t2, bottom_middle			#
-			lb $s3, 9($s4)
+			add $t4, $s4, $s5			#
+			addi $t4, $t4, -1			#
+			lb $s3, 0($t4)				#
 			andi $t3, $s3, CELL_REVEALED		#
 			beq $t3, CELL_REVEALED, bottom_middle	#
 			andi $t3, $s3, CONT_FLAG		#
@@ -766,8 +778,9 @@ search_cells:
 
 		bottom_middle:					#
 			addi $t1, $s1, 1			#
-			bge $t1, ROW_SIZE, bottom_right		#
-			lb $s3, 10($s4)
+			bge $t1, ROW_SIZE, search_cells_loop	#
+			add $t4, $s4, $s5			#
+			lb $s3, 0($t4)				#
 			andi $t3, $s3, CELL_REVEALED		#
 			beq $t3, CELL_REVEALED, bottom_right	#
 			andi $t3, $s3, CONT_FLAG		#
@@ -780,7 +793,9 @@ search_cells:
 			addi $t2, $s2, 1			#
 			bge $t1, ROW_SIZE search_cells_loop	#
 			bge $t2, COLUMN_SIZE search_cells_loop	#
-			lb $s3, 11($s4)
+			add $t4, $s4, $s5			#
+			addi $t4, $t4, 1			#
+			lb $s3, 0($t4)				#
 			andi $t3, $s3, CELL_REVEALED		#
 			beq $t3, CELL_REVEALED, search_cells_loop#
 			andi $t3, $s3, CONT_FLAG		#
