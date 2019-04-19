@@ -120,19 +120,6 @@
 	addi $sp, $sp, 36					#
 .end_macro
 
-.macro zero_cells_array(%address)
-	li $t1, MAX_CELLS					# t1 = MAX_CELLS, will be used as counter
-	li $t2, 0						# The byte we are working on
-
-	zero_cells_array_loop:					#
-		beqz $t1, zero_cells_array_done			# If counter = 0, we are done
-		sb $t2, 0(%address)				# Store t2 in to address
-		addi %address, %address, 1			# Increment address by 1
-		addi $t1, $t1, -1				# Decrement counter by 1
-		b zero_cells_array_loop				# Go to the beginning of the loop
-	zero_cells_array_done:					#
-.end_macro
-
 .macro set_all_cells(%icon, %color)
 	li $t0, STARTING_ADDRESS				# The starting address of the cells
 	li $t3, MAX_CELLS					# Counter will start at MAX_CELLS and go until it reaches 0
@@ -208,7 +195,7 @@ smiley:
 #################################################################
 
 open_file:
-	# a0 = filename
+	# a0 = File descriptor
 
 	li $a1, 0						#
 	li $a2, 0						#
@@ -231,11 +218,21 @@ load_map:
 	# s3 = Address of File_Buffer. Will be incremented
 	# s4 = Char from File_Buffer
 	# s5 = Toggle to load in to row or column. If 1 by the time we reach EOF we know there is a coord missing
+	# t1 = MAX_CELLS
+	# t2 = Byte we're working on in the zeroing loop
 	# v0 = Returns -1 if error, else returns 0
 
 	pack_stack()						# Preserve the stack since there is a nested function
 	move $s0, $a1						# Move cells_array address to t0
-	zero_cells_array($s0)					# Make sure the cells_array is all zero'd 
+
+	zero_cells_array_loop:					#
+		beqz $t1, zero_cells_array_done			# If counter = 0, we are done
+		sb $s4, 0($s0)					# Store t2 in to address
+		addi $s0, $s0, 1				# Increment address by 1
+		addi $t1, $t1, -1				# Decrement counter by 1
+		b zero_cells_array_loop				# Go to the beginning of the loop
+	zero_cells_array_done:					#
+
 	move $s0, $a1						# s0 will be the base address of the cells_array (redoing since the macro incremented it)
 	li $s1, 0						# s1 will be the cell location/offset of the cells_array
 	li $v0, READ_FROM_FILE					# Set the syscall to read from file
@@ -577,7 +574,6 @@ perform_action:
 	unpack_stack()						# Restore the stack
 	jr $ra							# Return to previous address
 
-
 game_status:
 	# s0/a0 = cells_array address
 	# v0 = -1 if lost, 0 if ongoing, 1 if won
@@ -666,6 +662,7 @@ search_cells:
 	# s4 = cells_array + offset
 	# s5 = ROW_SIZE for mult
 	# t4 = offset
+
 	pack_stack()						# Preserve stack
 	move $fp, $sp						# fp = sp
 	push($a1)						# Push row to stack
@@ -691,7 +688,7 @@ search_cells:
 		andi $t3, $s3, 15				# AND byte with 15 to clear out the 4 MSBs
 		bnez $t3, search_cells_loop			# If byte != 0, go to start of loop, otherwise start search
 
-		start_search:
+		start_search:					#
 		addi $t1, $s1, -1				# Subtract 1 from row
 		bltz $t1, middle_row				# If row < 0, skip row and go to next row
 
@@ -759,9 +756,9 @@ search_cells:
 			push($t2)				# Push column to stack
 
 		bottom_row:
-		
-		addi $t1, $s1, 1			# Add 1 to row
-		bge $t1, ROW_SIZE, search_cells_loop	# If row > ROW_SIZE, go to start of loop
+		addi $t1, $s1, 1				# Add 1 to row
+		bge $t1, ROW_SIZE, search_cells_loop		# If row > ROW_SIZE, go to start of loop
+
 		bottom_left:					#
 			addi $t2, $s2, -1			# Subtract 1 from column
 			bltz $t2, bottom_middle			# If column < 0, go to next cell
@@ -944,7 +941,7 @@ set_adj_bomb:
 		bltz $t6, return_to_column_loop			# If the column coord now is less than 0, we are off the grid
 
 		bge $t5, ROW_SIZE, return_to_row_loop		# If the row coord now is more than (ROW_SIZE - 1), we are off the grid
-		bgt $t6, COLUMN_SIZE, return_to_column_loop	# If the column coord now is more than (COLUMN_SIZE - 1), we are off the grid
+		bge $t6, COLUMN_SIZE, return_to_column_loop	# If the column coord now is more than (COLUMN_SIZE - 1), we are off the grid
 
 		move $t2, $a2					# Move the cells_array address in to t2
 		add $t2, $t2, $t6				# Add the cells_array address and column coord
