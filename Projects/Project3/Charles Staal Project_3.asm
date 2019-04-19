@@ -670,30 +670,30 @@ search_cells:
 	# s4 = cells_array + offset
 	# s5 = ROW_SIZE for mult
 	# t4 = offset
-	pack_stack()						# Lets save the stack
+	pack_stack()						# Preserve stack
 	move $fp, $sp						# fp = sp
-	push($a1)						# sp.push(row)
-	push($a2)						# sp.push(col)
+	push($a1)						# Push row to stack
+	push($a2)						# Push column to stack
 
-	search_cells_loop:					# The loop
-		beq $fp, $sp, search_cells_done			#
-		pop($s2)					#
-		pop($s1)					#
-		li $s5, ROW_SIZE				#
-		mul $s4, $s1, $s5				#
-		add $s4, $s4, $s2				#
-		add $s4, $s4, $a0				#
-		lb $s3, 0($s4)					#
-		andi $t3, $s3, CONT_FLAG			#
-		beq $t3, CONT_FLAG, skip_reveal			#
-		ori $s3, $s3, CELL_REVEALED			#
-		sb $s3, 0($s4)
-		move $a1, $s1					#
-		move $a2, $s2					#
-		jal draw_current_cell				#
+	search_cells_loop:					#
+		beq $fp, $sp, search_cells_done			# If fp & sp are equal, we are done
+		pop($s2)					# Pop column off stack
+		pop($s1)					# Pop row off stack
+		li $s5, ROW_SIZE				# Load ROW_SIZE to s5 for arithmetic allowing differing board sizes
+		mul $s4, $s1, $s5				# Multiply row by ROW_SIZE and store in s4
+		add $s4, $s4, $s2				# Add column to s4
+		add $s4, $s4, $a0				# Add cells_array to s4, and now we have cell address
+		lb $s3, 0($s4)					# Load byte from cell address
+		andi $t3, $s3, CONT_FLAG			# AND byte with CONT_FLAG
+		beq $t3, CONT_FLAG, skip_reveal			# If byte = CONT_FLAG, skip reveal
+		ori $s3, $s3, CELL_REVEALED			# In reveal: OR byte with CELL_REVEALED to set reveal bit to 1
+		sb $s3, 0($s4)					# Store new byte to cell array
+		move $a1, $s1					# Move row to a1
+		move $a2, $s2					# Move column to a2
+		jal draw_current_cell				# Draw current cell
 		skip_reveal:					#
-		andi $t3, $s3, 15				#
-		bnez $t3, search_cells_loop			#
+		andi $t3, $s3, 15				# AND byte with 15 to clear out the 4 MSBs
+		bnez $t3, search_cells_loop			# If byte != 0, go to start of loop, otherwise start search
 
 		top_left:					#
 			addi $t1, $s1, -1			#
