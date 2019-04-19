@@ -147,41 +147,6 @@
 	map_done:						#
 .end_macro
 
-.macro load_byte(%row, %col, %reg_for_byte, %cells_array)
-	li $t9, ROW_SIZE					# Load ROW_SIZE to t9 for multiplication
-	mul %reg_for_byte, %row, $t9				# Multiply Cursor_Row by ROW SIZE
-	add %reg_for_byte, %reg_for_byte, %col			# Add Cursor_Col and Cursor_Row * ROW_SIZE
-	add %reg_for_byte, %cells_array, %reg_for_byte		# Add the cells_array address and now we have the cells cells_array address
-	lb %reg_for_byte, 0(%reg_for_byte)			# Load byte in to the return register for the macro
-.end_macro
-
-.macro store_byte(%row, %col, %byte_to_store, %cells_array)
-	li $t9, ROW_SIZE					# Load ROW_SIZE to t9 for multiplication
-	mul $t9, %row, $t9					# Multiply Cursor_Row by ROW SIZE
-	add $t9, $t9, %col					# Add Cursor_Col and Cursor_Row * ROW_SIZE
-	add $t9, %cells_array, $t9				# Add the cells_array address and now we have the cells cells_array address
-	sb %byte_to_store, 0($t9)				# Load byte in to the return register for the macro
-.end_macro
-
-.macro is_hidden(%byte_to_check, %return_reg)
-	andi %byte_to_check, %byte_to_check, CELL_REVEALED
-	beq %byte_to_check, CELL_REVEALED, is_hidden_false
-	li %return_reg, 1
-	b is_hidden_end
-	is_hidden_false:
-	li %return_reg, 0
-	is_hidden_end:
-.end_macro
-
-.macro has_flag(%byte_to_check, %return_reg)
-	andi %byte_to_check, %byte_to_check, CONT_FLAG
-	beq %byte_to_check, CONT_FLAG, has_flag_true
-	li %return_reg, 0
-	b has_flag_end
-	has_flag_true:
-	li %return_reg, 1
-	has_flag_end:
-.end_macro
 #################################################################
 # PART 1 FUNCTIONS
 #################################################################
@@ -711,11 +676,15 @@ search_cells:
 		beq $fp, $sp, search_cells_done			#
 		pop($s2)					#
 		pop($s1)					#
-		load_byte($s1, $s2, $s3, $a0)			#
+		li $t4, ROW_SIZE
+		mul $s4, $s1, $t4
+		add $s4, $s4, $s2
+		add $s4, $s4, $a0
+		lb $s3, 0($s4)
 		andi $t3, $s3, CONT_FLAG			#
 		beq $t3, CONT_FLAG, skip_reveal			#
 		ori $s3, $s3, CELL_REVEALED			#
-		store_byte($s1, $s2, $s3, $a0)			#
+		sb $s3, 0($s4)
 		move $a1, $s1					#
 		move $a2, $s2					#
 		jal draw_current_cell				#
@@ -728,7 +697,7 @@ search_cells:
 			addi $t2, $s2, -1			#
 			bltz $t1, top_middle			#
 			bltz $t2, top_middle			#
-			load_byte($t1, $t2, $s3, $a0)		#
+			lb $s3, -11($s4)
 			andi $t3, $s3, CELL_REVEALED		#
 			beq $t3, CELL_REVEALED, top_middle	#
 			andi $t3, $s3, CONT_FLAG		#
@@ -739,7 +708,7 @@ search_cells:
 		top_middle:					#
 			addi $t1, $s1, -1			#
 			bltz $t1, top_right			#
-			load_byte($t1, $s2, $s3, $a0)		#
+			lb $s3, -10($s4)
 			andi $t3, $s3, CELL_REVEALED		#
 			beq $t3, CELL_REVEALED, top_right	#
 			andi $t3, $s3, CONT_FLAG		#
@@ -752,7 +721,7 @@ search_cells:
 			addi $t2, $s2, 1			#
 			bltz $t1, left				#
 			bge $t2, COLUMN_SIZE, left		#
-			load_byte($t1, $t2, $s3, $a0)		#
+			lb $s3, -9($s4)
 			andi $t3, $s3, CELL_REVEALED		#
 			beq $t3, CELL_REVEALED, left		#
 			andi $t3, $s3, CONT_FLAG		#
@@ -763,7 +732,7 @@ search_cells:
 		left:						#
 			addi $t2, $s2, -1			#
 			bltz $t2, right				#
-			load_byte($s1, $t2, $s3, $a0)		#
+			lb $s3, -1($s4)
 			andi $t3, $s3, CELL_REVEALED		#
 			beq $t3, CELL_REVEALED, right		#
 			andi $t3, $s3, CONT_FLAG		#
@@ -774,7 +743,7 @@ search_cells:
 		right:						#
 			addi $t2, $s2, 1			#
 			bge $t2, COLUMN_SIZE, bottom_left	#
-			load_byte($s1, $t2, $s3, $a0)		#
+			lb $s3, 1($s4)
 			andi $t3, $s3, CELL_REVEALED		#
 			beq $t3, CELL_REVEALED, bottom_left	#
 			andi $t3, $s3, CONT_FLAG		#
@@ -787,7 +756,7 @@ search_cells:
 			addi $t2, $s2, -1			#
 			bge $t1, ROW_SIZE, bottom_middle	#
 			bltz $t2, bottom_middle			#
-			load_byte($t1, $t2, $s3, $a0)		#
+			lb $s3, 9($s4)
 			andi $t3, $s3, CELL_REVEALED		#
 			beq $t3, CELL_REVEALED, bottom_middle	#
 			andi $t3, $s3, CONT_FLAG		#
@@ -798,7 +767,7 @@ search_cells:
 		bottom_middle:					#
 			addi $t1, $s1, 1			#
 			bge $t1, ROW_SIZE, bottom_right		#
-			load_byte($t1, $s2, $s3, $a0)		#
+			lb $s3, 10($s4)
 			andi $t3, $s3, CELL_REVEALED		#
 			beq $t3, CELL_REVEALED, bottom_right	#
 			andi $t3, $s3, CONT_FLAG		#
@@ -811,7 +780,7 @@ search_cells:
 			addi $t2, $s2, 1			#
 			bge $t1, ROW_SIZE search_cells_loop	#
 			bge $t2, COLUMN_SIZE search_cells_loop	#
-			load_byte($t1, $t2, $s3, $a0)		#
+			lb $s3, 11($s4)
 			andi $t3, $s3, CELL_REVEALED		#
 			beq $t3, CELL_REVEALED, search_cells_loop#
 			andi $t3, $s3, CONT_FLAG		#
