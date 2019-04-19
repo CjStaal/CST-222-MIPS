@@ -558,12 +558,16 @@ perform_action:
 		jal draw_current_cell				# Draw the current cell
 		b draw_cursor					# Draw the cursor on the new cell
 
-	draw_cursor:
-		move $a0, $s0
+	draw_cursor:						#
+		move $a0, $s6					# Move row to a0
+		move $a1, $s7					# Move column to a1
+		lb $a2, 0($s5)					# Move icon to a2
 		lb $t2, 1($s5)					# Load the color byte from display address
-		andi $t2, $t2, 15				# AND it with 15 to save the right most 4 bits and zero our the 4 MSBs
-		addi $t2, $t2, YELLOW_BACKGROUND		# Add the new background color
-		sb $t2, 1($s5)					# Store the new color combo
+		andi $a3, $t2, 15				# AND it with 15 to save the right most 4 bits and zero our the 4 MSBs and then save it to a3
+		li $t2, YELLOW_BACKGROUND			# Load YELLOW_BACKGROUND to t2
+		push($t2)					# Push t2 to the stack for the 5th arg
+		jal set_cell					# Go to set_cell, because the dumb spec sheet says to
+		pop($t2)					# Pop t2 off the stack
 		sb $s6, Cursor_Row				# Store the new Cursor_Row
 		sb $s7, Cursor_Col				# Store the new Cursor_Col
 		li $v0, 0					# Load up v0 for return
