@@ -625,8 +625,9 @@ game_status:
 		b game_status_loop				# Go to start of loop
 	
 	check_win_condition:					#
-		bne $t3, $t2, game_ongoing			# If flagged bombs do not equal bombs, game is ongoing
-		b game_win					# Else we won!
+		bne $t3, $t4, game_ongoing			#
+		beq $t3, $t2, game_win				# If flagged bombs do not equal bombs, game is ongoing
+		b game_ongoing					#
 		
 	game_win:						#
 		li $v0, 1					# If the game is won, return 1
