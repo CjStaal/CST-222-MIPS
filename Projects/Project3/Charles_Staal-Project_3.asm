@@ -625,10 +625,7 @@ game_status:
 		b game_status_loop				# Go to start of loop
 	
 	check_win_condition:					#
-		add $t9, $t5, $t2				# Add the revealed counter + bomb counter
-		beq $t9, MAX_CELLS, game_win			# If it equals MAX_CELLS, we won
-		bne $t3, $t4, game_ongoing			# If flagged bombs and flags aren't equal, we haven't won
-		bne $t4, $t2, game_ongoing			# If Bombs and flags aren't equal, we haven't won
+		bne $t3, $t2, game_ongoing			# If flagged bombs do not equal bombs, game is ongoing
 		b game_win					# Else we won!
 		
 	game_win:						#
@@ -860,7 +857,7 @@ draw_current_cell:
 	
 	draw_flag:						#
 		li $t5, FLAG_ICON				# Load the flag icon
-		li $t6, BRIGHT_MAGENTA_FOREGROUND		# Load bright magenta foreground
+		li $t6, BRIGHT_BLUE_FOREGROUND			# Load bright blue foreground
 		addi $t6, $t6, GRAY_BACKGROUND			# Add gray background
 		b draw_the_cell					# Draw the cell
 
