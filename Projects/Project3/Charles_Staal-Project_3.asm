@@ -615,11 +615,6 @@ game_status:
 		addi $t4, $t4, 1				# Increment the flag counter
 		skip_flag:					#
 
-		andi $t9, $t1, CELL_REVEALED			# AND the byte with CELL_REVEALED to zero out all the bits except the revealed bit
-		beqz $t9, skip_revealed_cell			# If the bit is 0, skip incrementing the revealed counter
-		addi $t5, $t5, 1				# Increment the revealed coutner
-		skip_revealed_cell:				#
-
 		addi $s0, $s0, 1				# Increment the cells_array address by 1
 		addi $t0, $t0, 1				# Increment the counter by 1
 		b game_status_loop				# Go to start of loop
