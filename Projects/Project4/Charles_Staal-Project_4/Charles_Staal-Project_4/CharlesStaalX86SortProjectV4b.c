@@ -50,15 +50,11 @@ main(int argc, char *argv[] )
 	* replace Your Name Here with your name
 	*/
 
-	INITCST("Fall 2018 Sort routine using x86: ","Your Name here");
+	INITCST("Fall 2018 Sort routine using x86: ","Charles Staal");
 	sortType = 'I';   // 'I' capital I for insert sort otherwise it is selection sort
 
 
-	/*
-	 * call your asm procedure here
-	 * you can use any variable name you want and make sure the return type
-	 * is correct.
-	 */
+	asmSort( listOfNumber, numCount, HALFPOINT);
 	
 	
 
@@ -98,69 +94,57 @@ void printList(int *list, int arrayLen) {
 void asmSort(int *list, int arrayLen, int halfpoint) {
 
 	/*
-	 * list = base address of the list of integer array
+	 * list = address of the list of integer array
 	 * arraylen = the number of element in the list  just like list.length in java
 	 * halfpoint  use as a flag
-	 * halpfpoint = 1 when the sort routine reach half point  return, 
+	 * halpfpoint = 1 when the sort routine reach half point just return,
 	 *              otherwise finished the sort and return
 	 */
-
-	/*
-	 *
-	 *
-	 insertion_sort(list,arrayLen,halfpoint);
-	 return;
-	
-	 *
-	 *
-	 */
-
-
-	// any variable can be declare here before _asm
-	/*
-	int tmp = 0;
-	int  i = 0;
-	int  j = 0;
-	*/
-		_asm 
+	_asm
 	{
-/* the following are just a suggestion of what your code would look like  ****
-   you do not have to follow it                                           ****
 
-		mov ecx,arrayLen
-		mov esi,list
-		mov ebx,halfpoint
-		....
-		
+		mov ecx, arrayLen
+		mov esi, list
+		mov ebx, halfpoint
+		mov eax, 0
 
-	
-		; .......
-more:		cmp ecx,0
-		jle	done
-		;.........
-		mov edx,arrayLen
-		sar edx,1
-		cmp ecx,edx
-		jg  cont1
-		cmp halfpoint,1
-		je  partialdone           ; return
-cont1:  	;.....
-		;......
-		;.......
-		;.....
-		mov [esi],eax
-		add	esi,4
-		dec	ecx
-		jmp	more
-done:
-partialdone:
-************************************************************************************************/
+		more:
+		cmp ecx, 0				//If Arraylength <= 0
+			jle	done				//Exit
+			mov edi, eax			//J = I
+			push eax                //push eax (i) to free up register for key
+			mov eax, [esi + edi]		//Key = Array[i] technically j but j=i atm
+			sub edi, 4				//J - 1
+			mov edx, arrayLen		//K = Arraylength
+			sar edx, 1				//Signed Shift Right K by 1
+			add edx, 1				//Correcting the half point checker by 1
+			cmp ecx, edx			//IF Arraylength > K
+			jg  cont1				//Jump cont1 hey
+			cmp halfpoint, 1		//IF halfpoint = 1
+			je  done2				//Exit ELSE cont1
 
-		/* erase above comment and 
-		   you can start here */
+			cont1 :
+		cmp edi, 0					//If j<= 0 exit loop
+			jl cont2
+			cmp[esi + edi], eax		//If Array[J] <= key exit loop
+			jle cont2
+			mov edx, [esi + edi]          //k = Array[j]
+			mov[esi + edi + 4], edx		//Array[j+1] = Array j
+			sub edi, 4					//J--				
+			jmp cont1
 
+			cont2 :
+			mov[esi + edi + 4], eax	//Array[j+1] = key				
+			pop eax					//Pop eax to get i from before for use above
+			add eax, 4				//Increment i
+			dec	ecx					//Decrement ArrayLength
+			jmp	more
+
+			done2 :				//halfpoint stack reset
+		pop eax;
+	done:
 	}
-		
+
 	return;
 
 }
