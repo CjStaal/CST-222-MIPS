@@ -91,57 +91,53 @@ void printList(int *list, int arrayLen) {
 
 void asmSort(int *list, int arrayLen, int halfpoint) {
 	/*
-	void insertionSort(int arr[], int n, int halfpoint)
+	void as1mSort(int *list, int arrayLen, int halfpoint)
 	{
-		int i, key, j;
-		if (halfpoint)
-			n = (n / 2) + (n % 2);
-		i = 1;
-		while(n > 0)
-		{
-			key = arr[i];
-			j = i - 1;
-			while (j >= 0 && arr[j] > key)
-			{
-				arr[j + 1] = arr[j];
-				j = j - 1;
-			}
-			arr[j + 1] = key;
-			n--;
-			i++;
-		}
+	int i = 1, j, k;
+
+	if (halfpoint)
+	arrayLen = arrayLen / 2;
+	do
+	{
+	k = list[i];
+	j = i - 1;
+	while ((j >= 0) && (k < list[j]))
+	{
+	list[j + 1] = list[j];
+	--j;
+	}
+	list[j + 1] = k;
+	i++;
+	arrayLen--
+	} while (arrayLen > 0);
 	}*/
 	_asm
 	{
-		mov ecx, arrayLen					// n
+		mov ecx, arrayLen				// n
 		mov esi, list
-		mov ebx, halfpoint					// First halfpoint, then j
-		mov eax, 0							// i = 0
+		mov ebx, halfpoint				// First halfpoint, then j
+		mov eax, 0						// i = 0
 
-		cmp ebx, 1							// if(!halfpoint)
-			jne main_loop					// go to main loop
-		sar ecx, 1							// n/2
+		cmp ebx, 0						// if(!halfpoint)
+		je main_loop					// go to main loop
+		shr ecx, 1						// n/2
 
 		main_loop :
-			cmp ecx, 0						// while n > 0
-				je end
-			mov edx, [esi + eax]			// key = arr[i]
-			lea ebx, [eax - 4]				// j = i - 1
-			inner_loop :					// while ( j >= 0 && arr[j] > key )
-				cmp ebx, 0					// (if j < 0, leave)
-					jl end_inner
-				cmp[esi + ebx], edx			// (if arr[j] <= key, leave )
-					jle end_inner
-				mov edi, [esi + ebx]		// edi = arr[j]
-				mov[esi + ebx + 4], edi		// arr[j + 1] = edi;
-				sub ebx, 4					// j = j - 1;
-				jmp inner_loop
+		mov edx, [esi + eax]			// key = arr[i]
+			lea ebx, [esi + eax - 4]	// j = i - 1
+			inner_loop :				// while ( j >= 0 && arr[j] > key )
+			cmp[ebx], edx				// (if arr[j] <= key, leave )
+			jle end_inner
+			mov edi, [ebx]				// edi = arr[j]
+			mov[ebx + 4], edi			// arr[j + 1] = edi;
+			sub ebx, 4					// j = j - 1;
+			jnz inner_loop
 			end_inner :
-			mov[esi + ebx + 4], edx			// arr[j + 1] = key;
-			dec ecx							// n--
-			add eax, 4						// i++
-			jmp main_loop
-			end :
+		mov[ebx + 4], edx				// arr[j + 1] = key;
+			dec ecx
+			add eax, 4					// i++
+			cmp ecx, 0
+				jnz main_loop
 	}
 	return;
 }
