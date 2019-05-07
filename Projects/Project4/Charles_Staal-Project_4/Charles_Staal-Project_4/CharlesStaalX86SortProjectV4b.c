@@ -67,7 +67,6 @@ main(int argc, char *argv[] )
 	
 	printf("\n\n\nhit any key to continue or quit");
 	getchar();
-	getchar();
 }
 
 
@@ -117,20 +116,17 @@ void asmSort(int *list, int arrayLen, int halfpoint) {
 		mov ecx, arrayLen					// n
 		mov esi, list
 		mov ebx, halfpoint					// First halfpoint, then j
-		mov eax, 4							// i = 1
+		mov eax, 0							// i = 0
 
 		cmp ebx, 1							// if(!halfpoint)
 			jne main_loop					// go to main loop
-		mov ebx, ecx						// else copy arraylen to temp
-		and ebx, 1							// n%2
-		shr ecx, 1							// n/2
-		add ecx, ebx						// add two together to get loop amount
+		sar ecx, 1							// n/2
 
 		main_loop :
 			cmp ecx, 0						// while n > 0
 				je end
 			mov edx, [esi + eax]			// key = arr[i]
-			mov ebx, [eax - 4]				// j = i - 1
+			lea ebx, [eax - 4]				// j = i - 1
 			inner_loop :					// while ( j >= 0 && arr[j] > key )
 				cmp ebx, 0					// (if j < 0, leave)
 					jl end_inner
@@ -141,7 +137,7 @@ void asmSort(int *list, int arrayLen, int halfpoint) {
 				sub ebx, 4					// j = j - 1;
 				jmp inner_loop
 			end_inner :
-		mov[esi + ebx + 4], edx				// arr[j + 1] = key;
+			mov[esi + ebx + 4], edx			// arr[j + 1] = key;
 			dec ecx							// n--
 			add eax, 4						// i++
 			jmp main_loop
