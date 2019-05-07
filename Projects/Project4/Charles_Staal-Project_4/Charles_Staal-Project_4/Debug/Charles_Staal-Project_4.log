@@ -1,3 +1,4 @@
 ﻿  CharlesStaalX86SortProjectV4b.c
-checkAndTime.obj : warning LNK4099: PDB 'vc140.pdb' was not found with 'checkAndTime.obj' or at 'C:\Users\staac68\Documents\GitHub\CST-222-MIPS\Projects\Project4\Charles_Staal-Project_4\Debug\vc140.pdb'; linking object as if no debug info
-  Charles_Staal-Project_4.vcxproj -> C:\Users\staac68\Documents\GitHub\CST-222-MIPS\Projects\Project4\Charles_Staal-Project_4\Debug\Charles_Staal-Project_4.exe
+checkAndTime.obj : warning LNK4099: PDB 'vc140.pdb' was not found with 'checkAndTime.obj' or at 'C:\Users\Charl\Documents\GitHub\CST-222-MIPS\Projects\Project4\Charles_Staal-Project_4\Debug\vc140.pdb'; linking object as if no debug info
+  Charles_Staal-Project_4.vcxproj -> C:\Users\Charl\Documents\GitHub\CST-222-MIPS\Projects\Project4\Charles_Staal-Project_4\Debug\Charles_Staal-Project_4.exe
+  Charles_Staal-Project_4.vcxproj -> C:\Users\Charl\Documents\GitHub\CST-222-MIPS\Projects\Project4\Charles_Staal-Project_4\Debug\Charles_Staal-Project_4.pdb (Partial PDB)

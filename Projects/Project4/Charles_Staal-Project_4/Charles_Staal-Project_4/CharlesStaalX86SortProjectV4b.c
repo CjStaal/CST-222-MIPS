@@ -54,7 +54,7 @@ main(int argc, char *argv[] )
 	sortType = 'I';   // 'I' capital I for insert sort otherwise it is selection sort
 
 
-	asmSort( listOfNumber, numCount, HALFPOINT);
+	//asmSort( listOfNumber, numCount, HALFPOINT);
 	
 	
 
@@ -66,6 +66,7 @@ main(int argc, char *argv[] )
 	else printf("\n********* sort fail on the check sort\ncan not continue for timing \n");
 	
 	printf("\n\n\nhit any key to continue or quit");
+	getchar();
 	getchar();
 }
 
@@ -89,62 +90,62 @@ void printList(int *list, int arrayLen) {
 	printf("\n");
 }
 
-
-
 void asmSort(int *list, int arrayLen, int halfpoint) {
-
 	/*
-	 * list = address of the list of integer array
-	 * arraylen = the number of element in the list  just like list.length in java
-	 * halfpoint  use as a flag
-	 * halpfpoint = 1 when the sort routine reach half point just return,
-	 *              otherwise finished the sort and return
-	 */
+	void insertionSort(int arr[], int n, int halfpoint)
+	{
+		int i, key, j;
+		if (halfpoint)
+			n = (n / 2) + (n % 2);
+		i = 1;
+		while(n > 0)
+		{
+			key = arr[i];
+			j = i - 1;
+			while (j >= 0 && arr[j] > key)
+			{
+				arr[j + 1] = arr[j];
+				j = j - 1;
+			}
+			arr[j + 1] = key;
+			n--;
+			i++;
+		}
+	}*/
 	_asm
 	{
-
-		mov ecx, arrayLen
+		mov ecx, arrayLen					// n
 		mov esi, list
-		mov ebx, halfpoint
-		mov eax, 0
+		mov ebx, halfpoint					// First halfpoint, then j
+		mov eax, 4							// i = 1
 
-		more:
-		cmp ecx, 0				//If Arraylength <= 0
-			jle	done				//Exit
-			mov edi, eax			//J = I
-			push eax                //push eax (i) to free up register for key
-			mov eax, [esi + edi]		//Key = Array[i] technically j but j=i atm
-			sub edi, 4				//J - 1
-			mov edx, arrayLen		//K = Arraylength
-			sar edx, 1				//Signed Shift Right K by 1
-			add edx, 1				//Correcting the half point checker by 1
-			cmp ecx, edx			//IF Arraylength > K
-			jg  cont1				//Jump cont1 hey
-			cmp halfpoint, 1		//IF halfpoint = 1
-			je  done2				//Exit ELSE cont1
+		cmp ebx, 1							// if(!halfpoint)
+			jne main_loop					// go to main loop
+		mov ebx, ecx						// else copy arraylen to temp
+		and ebx, 1							// n%2
+		shr ecx, 1							// n/2
+		add ecx, ebx						// add two together to get loop amount
 
-			cont1 :
-		cmp edi, 0					//If j<= 0 exit loop
-			jl cont2
-			cmp[esi + edi], eax		//If Array[J] <= key exit loop
-			jle cont2
-			mov edx, [esi + edi]          //k = Array[j]
-			mov[esi + edi + 4], edx		//Array[j+1] = Array j
-			sub edi, 4					//J--				
-			jmp cont1
-
-			cont2 :
-			mov[esi + edi + 4], eax	//Array[j+1] = key				
-			pop eax					//Pop eax to get i from before for use above
-			add eax, 4				//Increment i
-			dec	ecx					//Decrement ArrayLength
-			jmp	more
-
-			done2 :				//halfpoint stack reset
-		pop eax;
-	done:
+		main_loop :
+			cmp ecx, 0						// while n > 0
+				je end
+			mov edx, [esi + eax]			// key = arr[i]
+			mov ebx, [eax - 4]				// j = i - 1
+			inner_loop :					// while ( j >= 0 && arr[j] > key )
+				cmp ebx, 0					// (if j < 0, leave)
+					jl end_inner
+				cmp[esi + ebx], edx			// (if arr[j] <= key, leave )
+					jle end_inner
+				mov edi, [esi + ebx]		// edi = arr[j]
+				mov[esi + ebx + 4], edi		// arr[j + 1] = edi;
+				sub ebx, 4					// j = j - 1;
+				jmp inner_loop
+			end_inner :
+		mov[esi + ebx + 4], edx				// arr[j + 1] = key;
+			dec ecx							// n--
+			add eax, 4						// i++
+			jmp main_loop
+			end :
 	}
-
 	return;
-
 }
