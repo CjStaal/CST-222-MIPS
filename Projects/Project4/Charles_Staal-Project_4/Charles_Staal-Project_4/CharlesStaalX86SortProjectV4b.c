@@ -126,17 +126,16 @@ void asmSort(int *list, int arrayLen, int halfpoint) {
 		mov edx, [esi + eax]			// key = arr[i]
 			lea ebx, [esi + eax - 4]	// j = i - 1
 			inner_loop :				// while ( j >= 0 && arr[j] > key )
-			cmp[ebx], edx				// (if arr[j] <= key, leave )
-			jle end_inner
-			mov edi, [ebx]				// edi = arr[j]
-			mov[ebx + 4], edi			// arr[j + 1] = edi;
-			sub ebx, 4					// j = j - 1;
-			jnz inner_loop
+			cmp [ebx], edx				// (if arr[j] <= key, leave )
+				jle end_inner
+				mov edi, [ebx]			// edi = arr[j]
+				mov[ebx + 4], edi		// arr[j + 1] = edi;
+				sub ebx, 4				// j = j - 1;
+				jnz inner_loop
 			end_inner :
 		mov[ebx + 4], edx				// arr[j + 1] = key;
-			dec ecx
 			add eax, 4					// i++
-			cmp ecx, 0
+			dec ecx
 				jnz main_loop
 	}
 	return;

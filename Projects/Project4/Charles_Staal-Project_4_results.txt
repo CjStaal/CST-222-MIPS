@@ -1,0 +1,40 @@
+Student name: Charles Staal
+
+CSE222 Fall 2018 Sort routine using x86:  submitted by: Charles Staal
+
+
+                 run on : Wed May  8 13:13:16 2019
+
+                 running on computer <DESKTOP-7BDEAJ9>
+
+--------------------------------------------------------------
+
+
+Show you the augmented new list
+    1   99  120    5  218   12   10  556   22   98
+  120   90    4  349    8   45   37   43   67  213
+   18   97  171   24  124    7   78   56   78   92
+   11   56  111   27   89  900   48   49   39   59
+
+
+
+ ****** executing instructor's insertion sort ******
+
+*******************   This is for sort type : I
+
+
+                                 HALFPOINT *******  pass
+
+                                 NO_HALFPOINT *******  pass
+
+ You have pass the sort check.....  now let's time it ......
+
+ the multiplier is :    2
+ The start time is in HR:MM:SS:milli 13:13:16:0046
+ The stop  time is in HR:MM:SS:milli 13:13:16:0212
+
+  elapse time in milliseconds is :                156
+
+
+
+hit any key to continue or quit
