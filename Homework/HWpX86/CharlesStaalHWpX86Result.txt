@@ -1,0 +1,27 @@
+Student name: Charles Staal
+
+CSE222 x86 practice submitted by: Charles Staal
+
+
+                 run on : Tue May 14 17:08:38 2019
+
+                 running on computer <DESKTOP-7BDEAJ9>
+
+--------------------------------------------------------------
+
+ for str1 <The red fox jump over the fence>
+          from ASMstrLen : 31  C strlen: 31
+
+------------------------------------------------------------
+
+ for str2 <The chicken and duck hide under the rose bushes>
+          from ASMstrLen : 47  C strlen: 47
+
+------------------------------------------------------------
+
+ find the sum of array  : 60
+
+------------------------------------------------------------
+
+
+hit any key  .......  quit
