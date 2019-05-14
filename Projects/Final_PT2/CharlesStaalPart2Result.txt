@@ -1,0 +1,26 @@
+Name: Charles Staal
+Enter binary string: 1111000'B
+	Verify	   : 1111000'B
+
+				Input is invalid
+Enter binary string: '1111000a'B
+	Verify	   : '1111000a'B
+
+				Input is invalid
+Enter binary string: '1111000B
+	Verify	   : '1111000B
+
+				Input is invalid
+Enter binary string: '1111000'x
+	Verify	   : '1111000'x
+
+				Input is invalid
+Enter binary string: '1111000'B
+	Verify	   : '1111000'B
+
+Convert to int: 120
+ Add 5: 125
+ Convert to bit string: '1111101'B
+Enter binary string: *
+	Verify	   : *
+Goodbye
